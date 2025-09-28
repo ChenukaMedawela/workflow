@@ -34,6 +34,7 @@ const leadSchema = z.object({
   ownerEntityId: z.string().optional(),
   stageId: z.string().optional(),
   contractType: z.enum(["Annual", "Monthly", "One-Time"]),
+  contractDuration: z.coerce.number().min(0, "Duration must be a positive number.").optional(),
   contractStartDate: z.date(),
   contractEndDate: z.date(),
 });
@@ -65,6 +66,7 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
       sector: "",
       amount: 0,
       contractType: "Annual",
+      contractDuration: 12,
       contractStartDate: new Date(),
       contractEndDate: new Date(),
     },
@@ -122,6 +124,7 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
             ...leadData,
             stageId: stageId,
             amount: leadData.amount || 0,
+            contractDuration: values.contractDuration || 0,
             contractStartDate: formatISO(values.contractStartDate),
             contractEndDate: formatISO(values.contractEndDate),
             addedUserId: user.id,
@@ -355,6 +358,19 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
                         <SelectItem value="One-Time">One-Time</SelectItem>
                     </SelectContent>
                    </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+             <FormField
+              control={form.control}
+              name="contractDuration"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Contract Duration (months)</FormLabel>
+                  <FormControl>
+                    <Input type="number" placeholder="12" {...field} onChange={e => field.onChange(e.target.value === '' ? '' : Number(e.target.value))} />
+                  </FormControl>
                   <FormMessage />
                 </FormItem>
               )}

@@ -46,6 +46,7 @@ const formSchema = z.object({
     stageId: z.string().optional(),
     ownerEntityId: z.string().optional(),
     contractType: z.string().optional(),
+    contractDuration: z.coerce.number().min(0, "Duration must be a positive number.").optional(),
     contractStartDate: z.coerce.date().optional(),
     contractEndDate: z.coerce.date().optional(),
 });
@@ -87,6 +88,7 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
             stageId: lead.stageId,
             ownerEntityId: lead.ownerEntityId,
             contractType: lead.contractType,
+            contractDuration: lead.contractDuration,
             contractStartDate: isValidDate(lead.contractStartDate) ? new Date(lead.contractStartDate) : undefined,
             contractEndDate: isValidDate(lead.contractEndDate) ? new Date(lead.contractEndDate) : undefined,
         }
@@ -103,6 +105,7 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
                 stageId: lead.stageId,
                 ownerEntityId: lead.ownerEntityId,
                 contractType: lead.contractType,
+                contractDuration: lead.contractDuration,
                 contractStartDate: isValidDate(lead.contractStartDate) ? new Date(lead.contractStartDate) : undefined,
                 contractEndDate: isValidDate(lead.contractEndDate) ? new Date(lead.contractEndDate) : undefined,
             });
@@ -116,6 +119,7 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
             const updatedData: any = {
                 ...data,
                 amount: data.amount || 0,
+                contractDuration: data.contractDuration || 0,
                 contractStartDate: data.contractStartDate ? formatISO(data.contractStartDate) : null,
                 contractEndDate: data.contractEndDate ? formatISO(data.contractEndDate) : null,
             };
@@ -393,6 +397,19 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
                                 <FormMessage />
                                 </FormItem>
                             )}
+                            />
+                             <FormField
+                                control={form.control}
+                                name="contractDuration"
+                                render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Contract Duration (months)</FormLabel>
+                                    <FormControl>
+                                        <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))} />
+                                    </FormControl>
+                                    <FormMessage />
+                                </FormItem>
+                                )}
                             />
                              <FormField
                             control={form.control}

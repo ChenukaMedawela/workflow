@@ -33,6 +33,7 @@ const formSchema = z.object({
   amount: z.coerce.number().min(0, "Amount must be a positive number.").optional(),
   stageId: z.string().optional(),
   contractType: z.string().optional(),
+  contractDuration: z.coerce.number().min(0, "Duration must be a positive number.").optional(),
   contractStartDate: z.coerce.date().optional(),
   contractEndDate: z.coerce.date().optional(),
 });
@@ -76,6 +77,7 @@ export default function ManageLeadPage() {
             amount: leadData.amount,
             stageId: leadData.stageId,
             contractType: leadData.contractType,
+            contractDuration: leadData.contractDuration,
             contractStartDate: isValidDate(leadData.contractStartDate) ? new Date(leadData.contractStartDate) : undefined,
             contractEndDate: isValidDate(leadData.contractEndDate) ? new Date(leadData.contractEndDate) : undefined,
           });
@@ -121,6 +123,7 @@ export default function ManageLeadPage() {
       const updatedData: any = {
         ...data,
         amount: data.amount || 0,
+        contractDuration: data.contractDuration || 0,
         contractStartDate: data.contractStartDate ? formatISO(data.contractStartDate) : null,
         contractEndDate: data.contractEndDate ? formatISO(data.contractEndDate) : null,
       };
@@ -343,7 +346,7 @@ export default function ManageLeadPage() {
                         <CardTitle>Contract Details</CardTitle>
                         <CardDescription>Information about the contract agreement.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-3 gap-6 pt-6">
+                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
                         <FormField
                             control={form.control}
                             name="contractType"
@@ -362,6 +365,19 @@ export default function ManageLeadPage() {
                                     <SelectItem value="One-Time">One-Time</SelectItem>
                                 </SelectContent>
                                 </Select>
+                                <FormMessage />
+                            </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="contractDuration"
+                            render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Contract Duration (months)</FormLabel>
+                                <FormControl>
+                                    <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))} />
+                                </FormControl>
                                 <FormMessage />
                             </FormItem>
                             )}

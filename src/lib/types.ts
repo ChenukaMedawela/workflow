@@ -43,6 +43,7 @@ export type Lead = {
   contractStartDate: string; // ISO string date
   contractEndDate: string; // ISO string date
   amount: number;
+  contractDuration?: number; // in months
   addedUserId: string;
   addedDate: string; // ISO string date
   stageHistory: StageHistoryEntry[];
