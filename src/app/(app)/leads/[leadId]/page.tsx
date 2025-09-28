@@ -27,6 +27,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { Check, ChevronDown, PlusCircle } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
+import { useAuth } from '@/hooks/use-auth';
 
 const formSchema = z.object({
   accountName: z.string().min(2, { message: "Account name must be at least 2 characters." }),
@@ -46,6 +47,7 @@ export default function ManageLeadPage() {
   const router = useRouter();
   const { toast } = useToast();
   const leadId = params.leadId as string;
+  const { user } = useAuth();
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
@@ -143,7 +145,8 @@ export default function ManageLeadPage() {
         action: 'update_lead',
         from: originalLead,
         to: { ...originalLead, ...updatedData },
-        details: { leadId: lead.id, leadName: lead.accountName }
+        details: { leadId: lead.id, leadName: lead.accountName },
+        user,
       });
 
 
@@ -455,5 +458,3 @@ export default function ManageLeadPage() {
     </>
   );
 }
-
-    

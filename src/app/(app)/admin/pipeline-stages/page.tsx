@@ -13,12 +13,14 @@ import { Button } from '@/components/ui/button';
 import { PlusCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { logAudit } from '@/lib/audit-log';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminPipelineStagesPage() {
     const [stages, setStages] = useState<Stage[]>([]);
     const [loading, setLoading] = useState(true);
     const [newStageName, setNewStageName] = useState('');
     const { toast } = useToast();
+    const { user } = useAuth();
 
     // Needed for react-beautiful-dnd in Next.js
     useEffect(() => {
@@ -96,7 +98,8 @@ export default function AdminPipelineStagesPage() {
             await logAudit({
                 action: 'create_pipeline_stage',
                 to: { id: docRef.id, ...newStageData },
-                details: { stageName: newStageName }
+                details: { stageName: newStageName },
+                user,
             });
 
             toast({ title: "Success", description: `Stage "${newStageName}" has been added.` });
@@ -155,7 +158,8 @@ export default function AdminPipelineStagesPage() {
             await logAudit({
                 action: 'reorder_pipeline_stages',
                 from: { order: originalOrder },
-                to: { order: newOrder }
+                to: { order: newOrder },
+                user,
             });
 
             toast({ title: "Stages Reordered", description: "The pipeline stages have been reordered." });

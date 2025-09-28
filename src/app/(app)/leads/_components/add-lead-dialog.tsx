@@ -137,7 +137,8 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
         await logAudit({
             action: 'create_lead',
             to: { id: docRef.id, ...newLeadData },
-            details: { leadName: values.accountName }
+            details: { leadName: values.accountName },
+            user,
         });
 
         toast({
@@ -473,5 +474,3 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
     </Dialog>
   );
 }
-
-    

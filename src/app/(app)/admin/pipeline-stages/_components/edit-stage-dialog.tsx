@@ -11,6 +11,7 @@ import { db } from '@/lib/firebase';
 import { Stage } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logAudit } from '@/lib/audit-log';
+import { useAuth } from '@/hooks/use-auth';
 
 interface EditStageDialogProps {
     stage: Stage;
@@ -23,6 +24,7 @@ export function EditStageDialog({ stage, onStageUpdated, children }: EditStageDi
     const [name, setName] = useState(stage.name);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     useEffect(() => {
         if (open) {
@@ -43,7 +45,8 @@ export function EditStageDialog({ stage, onStageUpdated, children }: EditStageDi
                 action: 'rename_pipeline_stage',
                 from: { name: stage.name },
                 to: { name },
-                details: { stageId: stage.id }
+                details: { stageId: stage.id },
+                user,
             });
 
             setOpen(false);

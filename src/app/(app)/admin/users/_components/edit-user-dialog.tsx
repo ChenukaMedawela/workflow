@@ -109,7 +109,8 @@ export function EditUserDialog({ user, entities, onUserUpdated, open, onOpenChan
           action: 'update_user',
           from: originalUser,
           to: updatedUser,
-          details: { userId: user.id, userEmail: user.email }
+          details: { userId: user.id, userEmail: user.email },
+          user: currentUser,
       });
 
       toast({

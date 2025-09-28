@@ -38,6 +38,7 @@ import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
 import { Check, ChevronDown, PlusCircle } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
+import { useAuth } from "@/hooks/use-auth";
 
 const formSchema = z.object({
     accountName: z.string().min(2, { message: "Account name must be at least 2 characters." }),
@@ -68,6 +69,7 @@ const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
 
 export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded, open, onOpenChange, children, automationRules }: EditLeadDialogProps) {
     const router = useRouter();
+    const { user } = useAuth();
     const [shake, setShake] = useState(false);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
     
@@ -159,7 +161,8 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
                 action: 'update_lead',
                 from: originalLeadPlain,
                 to: updatedLeadPlain,
-                details: { leadId: lead.id, leadName: lead.accountName }
+                details: { leadId: lead.id, leadName: lead.accountName },
+                user,
             });
 
             toast({
@@ -469,5 +472,3 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
         </Dialog>
     );
 }
-
-    

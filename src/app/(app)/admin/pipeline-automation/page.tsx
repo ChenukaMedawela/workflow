@@ -16,6 +16,7 @@ import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
 import { Lead, Stage, AutomationRule } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logAudit } from '@/lib/audit-log';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminPipelineAutomationPage() {
     const [rules, setRules] = useState<AutomationRule[]>([]);
@@ -24,6 +25,7 @@ export default function AdminPipelineAutomationPage() {
     const [recommendations, setRecommendations] = useState<SuggestAutomationRulesOutput | null>(null);
     const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     useEffect(() => {
         const fetchData = async () => {
@@ -71,7 +73,8 @@ export default function AdminPipelineAutomationPage() {
             const result = await suggestAutomationRules(input);
             await logAudit({
                 action: 'generate_ai_recommendations',
-                details: { recommendationCount: result.recommendations.length }
+                details: { recommendationCount: result.recommendations.length },
+                user,
             });
             setRecommendations(result);
         } catch (error) {
@@ -103,7 +106,8 @@ export default function AdminPipelineAutomationPage() {
                     action: 'save_automation_rule',
                     from: originalRule,
                     to: ruleToSave,
-                    details: { stageName }
+                    details: { stageName },
+                    user,
                 });
 
                 toast({ title: "Rule Saved", description: `Automation rule for stage has been saved.`});

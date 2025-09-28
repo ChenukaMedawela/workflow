@@ -22,6 +22,7 @@ import { db, app } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Upload } from 'lucide-react';
 import { logAudit } from '@/lib/audit-log';
+import { useAuth } from '@/hooks/use-auth';
 
 const storage = getStorage(app);
 
@@ -32,6 +33,7 @@ export function LogoEditor() {
     const cropperRef = useRef<CropperRef>(null);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     const onFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files.length > 0) {
@@ -65,6 +67,7 @@ export function LogoEditor() {
                 await logAudit({
                     action: 'upload_logo',
                     to: { logoUrl: downloadURL },
+                    user,
                 });
 
                 toast({ title: "Logo Updated", description: "The new logo has been saved." });

@@ -42,7 +42,8 @@ export function DeleteUserDialog({ userToDelete, onUserDeleted, open, onOpenChan
             await logAudit({
                 action: 'delete_user',
                 from: { id: userToDelete.id, name: userToDelete.name, email: userToDelete.email },
-                details: { deletedUserName: userToDelete.name }
+                details: { deletedUserName: userToDelete.name },
+                user: currentUser,
             });
 
             onOpenChange(false);

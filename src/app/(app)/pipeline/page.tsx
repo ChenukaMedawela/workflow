@@ -103,7 +103,8 @@ export default function PipelinePage() {
                 action: 'move_lead',
                 from: { stage: sourceStage.name },
                 to: { stage: destStage.name },
-                details: { leadId: draggableId, leadName: lead.accountName }
+                details: { leadId: draggableId, leadName: lead.accountName },
+                user,
             });
 
             toast({
@@ -151,5 +152,3 @@ export default function PipelinePage() {
         </div>
     );
 }
-
-    

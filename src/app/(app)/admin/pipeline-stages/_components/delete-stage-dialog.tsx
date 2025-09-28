@@ -8,6 +8,7 @@ import { deleteDoc, doc } from "firebase/firestore";
 import { db } from '@/lib/firebase';
 import { useToast } from '@/hooks/use-toast';
 import { logAudit } from '@/lib/audit-log';
+import { useAuth } from '@/hooks/use-auth';
 
 interface DeleteStageDialogProps {
     stageId: string;
@@ -20,6 +21,7 @@ export function DeleteStageDialog({ stageId, stageName, onStageDeleted, children
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     const handleDelete = async () => {
         setLoading(true);
@@ -29,7 +31,8 @@ export function DeleteStageDialog({ stageId, stageName, onStageDeleted, children
             await logAudit({
                 action: 'delete_pipeline_stage',
                 from: { id: stageId, name: stageName },
-                details: { stageName: stageName }
+                details: { stageName: stageName },
+                user,
             });
 
             setOpen(false);

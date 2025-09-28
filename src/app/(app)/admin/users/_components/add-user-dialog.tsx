@@ -90,7 +90,8 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
             role: values.role,
             entity: entityName,
           },
-          details: { name: values.name, email: values.email, role: values.role }
+          details: { name: values.name, email: values.email, role: values.role },
+          user,
       });
 
       toast({

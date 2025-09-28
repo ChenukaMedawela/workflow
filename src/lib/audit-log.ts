@@ -11,22 +11,33 @@ type AuditLogInput = {
     from?: any;
     to?: any;
     details?: Record<string, any>;
+    user?: User | null;
 };
 
 export async function logAudit(log: AuditLogInput) {
     try {
-        const { user } = await getAuthenticatedUser();
+        let actingUser: User | null = null;
+        
+        if (log.user) {
+            actingUser = log.user;
+        } else {
+            const authResult = await getAuthenticatedUser();
+            actingUser = authResult.user;
+        }
         
         let auditEntry: Omit<AuditLog, 'id'>;
 
-        if (user) {
+        if (actingUser) {
             auditEntry = {
                 user: {
-                    id: user.id,
-                    name: user.name,
-                    entityId: user.entityId || null,
+                    id: actingUser.id,
+                    name: actingUser.name,
+                    entityId: actingUser.entityId || null,
                 },
-                ...log,
+                action: log.action,
+                from: log.from,
+                to: log.to,
+                details: log.details,
                 timestamp: new Date().toISOString(),
             };
         } else {
@@ -36,7 +47,10 @@ export async function logAudit(log: AuditLogInput) {
                     id: 'system',
                     name: 'System',
                 },
-                ...log,
+                action: log.action,
+                from: log.from,
+                to: log.to,
+                details: log.details,
                 timestamp: new Date().toISOString(),
             };
         }

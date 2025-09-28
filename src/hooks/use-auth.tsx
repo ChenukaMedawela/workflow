@@ -45,8 +45,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const userData = userDoc.data() as User;
                 
                 // Check if it's a new login vs a session restoration
-                if (!user || user.id !== userData.id) {
-                    logAudit({ action: 'login', details: { name: userData.name, email: userData.email } });
+                const isNewLogin = !user || user.id !== userData.id;
+                if (isNewLogin) {
+                    logAudit({ action: 'login', details: { name: userData.name, email: userData.email }, user: userData });
                     setSessionCookie(firebaseUser.uid); 
                 }
                 
@@ -111,7 +112,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, "users", firebaseUser.uid);
 
         await setDoc(userDocRef, newUser);
-        await logAudit({ action: 'signup', details: { name, email, role } });
+        await logAudit({ action: 'signup', details: { name, email, role }, user: newUser });
 
         setUser(newUser); // Manually set user in context after signup
         return newUser;
@@ -134,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     if (user) {
-        await logAudit({ action: 'logout', details: { name: user.name, email: user.email }});
+        await logAudit({ action: 'logout', details: { name: user.name, email: user.email }, user });
     }
     await signOut(auth);
     router.push('/login');

@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { logAudit } from '@/lib/audit-log';
+import { useAuth } from '@/hooks/use-auth';
 
 
 interface StageCardProps {
@@ -28,6 +29,7 @@ interface StageCardProps {
 
 export function StageCard({ stage, onStageUpdated, onStageDeleted, dragHandleProps }: StageCardProps) {
     const { toast } = useToast();
+    const { user } = useAuth();
 
     const handleToggle = async (field: keyof Stage | `rules.${keyof Stage['rules']}`, value: boolean) => {
         const stageRef = doc(db, "pipelineStages", stage.id);
@@ -59,7 +61,8 @@ export function StageCard({ stage, onStageUpdated, onStageDeleted, dragHandlePro
                 action: 'update_stage_property',
                 from: { [field]: originalValue },
                 to: { [field]: value },
-                details: { stageId: stage.id, stageName: stage.name }
+                details: { stageId: stage.id, stageName: stage.name },
+                user,
             });
 
             onStageUpdated();

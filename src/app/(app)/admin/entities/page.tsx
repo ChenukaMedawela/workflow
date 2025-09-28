@@ -67,7 +67,8 @@ export default function AdminEntitiesPage() {
             await logAudit({
                 action: 'create_entity',
                 to: { id: docRef.id, ...newEntity },
-                details: { entityName: newEntityName }
+                details: { entityName: newEntityName },
+                user,
             });
             
             toast({ title: "Success", description: `Entity "${newEntityName}" has been added.` });
@@ -147,5 +148,5 @@ export default function AdminEntitiesPage() {
                 </Table>
             </CardContent>
         </Card>
-    )
+    );
 }

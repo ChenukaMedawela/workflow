@@ -14,11 +14,13 @@ import { useToast } from '@/hooks/use-toast';
 import { getStorage, ref, deleteObject } from 'firebase/storage';
 import { logAudit } from '@/lib/audit-log';
 import { Label } from '@/components/ui/label';
+import { useAuth } from '@/hooks/use-auth';
 
 export default function AdminAppearancePage() {
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+    const { user } = useAuth();
 
     useEffect(() => {
         const themeRef = doc(db, 'settings', 'theme');
@@ -46,7 +48,7 @@ export default function AdminAppearancePage() {
             const themeRef = doc(db, 'settings', 'theme');
             await setDoc(themeRef, { logoUrl: null }, { merge: true });
 
-            await logAudit({ action: 'remove_logo' });
+            await logAudit({ action: 'remove_logo', user });
 
             toast({ title: "Logo Removed", description: "The application logo has been removed." });
         } catch (error: any) {
