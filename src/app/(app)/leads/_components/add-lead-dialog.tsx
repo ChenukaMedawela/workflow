@@ -4,7 +4,7 @@
 
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, PlusCircle, ChevronsUpDown, Check } from "lucide-react";
+import { CalendarIcon, PlusCircle, ChevronDown, Check } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format, formatISO } from "date-fns";
@@ -209,7 +209,7 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
                                 (sector) => sector === field.value
                               )
                             : "Select sector"}
-                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
                       </FormControl>
                     </PopoverTrigger>

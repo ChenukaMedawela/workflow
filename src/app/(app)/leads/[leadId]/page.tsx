@@ -24,7 +24,7 @@ import { Timeline } from '@/components/ui/timeline';
 import { logAudit } from '@/lib/audit-log';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { cn } from '@/lib/utils';
-import { Check, ChevronsUpDown, PlusCircle } from 'lucide-react';
+import { Check, ChevronDown, PlusCircle } from 'lucide-react';
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 
 const formSchema = z.object({
@@ -238,7 +238,7 @@ export default function ManageLeadPage() {
                                                     (sector) => sector === field.value
                                                 )
                                                 : "Select sector"}
-                                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                            <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                             </Button>
                                         </FormControl>
                                         </PopoverTrigger>
@@ -425,5 +425,3 @@ export default function ManageLeadPage() {
     </>
   );
 }
-
-    

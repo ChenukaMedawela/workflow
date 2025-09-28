@@ -36,7 +36,7 @@ import { Separator } from "./ui/separator";
 import { Timeline } from "./ui/timeline";
 import { cn } from "@/lib/utils";
 import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
-import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
+import { Check, ChevronDown, PlusCircle } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
 
 const formSchema = z.object({
@@ -271,7 +271,7 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
                                                         (sector) => sector === field.value
                                                     )
                                                     : "Select sector"}
-                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                <ChevronDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                 </Button>
                                             </FormControl>
                                             </PopoverTrigger>
@@ -439,5 +439,3 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
         </Dialog>
     );
 }
-
-    
