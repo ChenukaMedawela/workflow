@@ -1,86 +1,66 @@
-
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
     function isSuperUser() {
-      return request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super Admin', 'Super User'];
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Super User';
+    }
+
+    function isSuperAdmin() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super User', 'Super Admin'];
     }
 
     function isAdmin() {
-      return request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Admin', 'Super Admin', 'Super User'];
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super User', 'Super Admin', 'Admin'];
     }
 
-    function isManager() {
-      return request.auth.uid != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Manager', 'Admin', 'Super Admin', 'Super User'];
-    }
-
-    function isSignedIn() {
-      return request.auth.uid != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
-
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
-    }
-
-    // Users can read their own data. Admins can read anyone's data.
-    // Users can create their own user doc on signup.
-    // Users can update their own data. Super Admins can update any user's data.
+    // Rules for 'users' collection
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAdmin();
-      allow create: if isOwner(userId); // For signup
-      allow update: if isOwner(userId) || isSuperUser();
-      allow delete: if isSuperUser();
+      allow read: if isSignedIn();
+      allow create: if !isSuperAdmin(); // Public signup
+      allow update: if isAdmin() || request.auth.uid == userId;
+      allow delete: if isAdmin() && request.auth.uid != userId; // Prevent self-deletion via rule
     }
-    
-    // Entities can be read by any signed-in user.
-    // Only Super Admins can create, update, or delete entities.
+
+    // Rules for 'entities' collection
     match /entities/{entityId} {
       allow read: if isSignedIn();
-      allow create, update, delete: if isSuperUser();
-    }
-
-    // Pipeline stages can be read by any signed-in user.
-    // Only Super Admins can create, update, or delete them.
-    match /pipelineStages/{stageId} {
-      allow read: if isSignedIn();
-      allow create, update, delete: if isSuperUser();
-    }
-
-    // Leads can be created by any signed-in user.
-    // Leads can be read/updated by their entity owner or by an Admin/Super User.
-    match /leads/{leadId} {
-      allow create: if isSignedIn();
-      allow read, update: if isAdmin() || (resource.data.ownerEntityId == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.entityId);
-      allow delete: if isSuperUser();
-    }
-
-    // Automation rules can be read by managers and above.
-    // Only Super Admins can create/update them.
-    match /automationRules/{ruleId} {
-      allow read: if isManager();
-      allow create, update: if isSuperUser();
-    }
-
-    // Settings (like theme/logo) can be read by anyone.
-    // Only Super Admins can update settings.
-    match /settings/{settingId} {
-      allow read: if true;
-      allow write: if isSuperUser();
+      allow create, update, delete: if isSuperAdmin();
     }
     
-    // Audit logs are write-only for authenticated users.
-    // Nobody can read them from the client-side to protect sensitive info.
+    // Rules for 'leads' collection
+    match /leads/{leadId} {
+      allow read, create: if isSignedIn();
+      allow update, delete: if isAdmin();
+    }
+
+    // Rules for 'pipelineStages' collection
+    match /pipelineStages/{stageId} {
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSuperAdmin();
+    }
+    
+    // Rules for 'automationRules' collection
+    match /automationRules/{ruleId} {
+        allow read, write: if isSuperAdmin();
+    }
+    
+    // Rules for 'auditLogs' collection
     match /auditLogs/{logId} {
-      allow read, update, delete: if false;
-      allow create: if isSignedIn();
+      allow read: if isSignedIn();
+      allow create: if true; // Allows server-side logging
+    }
+
+    // Rules for 'settings' collection
+    match /settings/{settingId} {
+        allow read: if true; // Public read for theme settings
+        allow write: if isSuperAdmin();
     }
   }
 }
