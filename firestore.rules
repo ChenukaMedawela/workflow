@@ -3,80 +3,59 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-  
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    function isOwner(userId) {
-      return request.auth.uid == userId;
-    }
 
     function getRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
     }
 
-    function isSuperUser() {
-      return isAuthenticated() && getRole() == 'Super User';
-    }
-    
-    function isSuperAdmin() {
-      return isAuthenticated() && getRole() == 'Super Admin';
+    function isSuperRole() {
+      return request.auth != null && getRole() in ['Super User', 'Super Admin'];
     }
 
     function isAdmin() {
-      return isAuthenticated() && getRole() == 'Admin';
+      return request.auth != null && getRole() in ['Admin', 'Super User', 'Super Admin'];
     }
 
-    function isAtLeastAdmin() {
-      return isAuthenticated() && (isAdmin() || isSuperAdmin() || isSuperUser());
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Default deny all
-    match /{document=**} {
-      allow read, write: if false;
-    }
-    
-    // USERS
     match /users/{userId} {
-      allow read: if isOwner(userId) || isAtLeastAdmin();
-      allow create: if isOwner(userId) || isAtLeastAdmin(); // Signup or admin adds user
-      allow update: if isOwner(userId) || isAtLeastAdmin(); // Profile updates or admin changes
-      allow delete: if isAtLeastAdmin(); // Only admins can delete users
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow create: if request.auth.uid == userId; // Allow users to create their own account doc on signup
+      allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
+      allow delete: if isAdmin();
     }
-    
-    // LEADS
-    match /leads/{leadId} {
-      // Allow any authenticated user to manage leads. Business logic is on client.
+
+    match /entities/{entityId} {
       allow read, write: if isAuthenticated();
     }
-    
-    // PIPELINE STAGES
+
+    match /leads/{leadId} {
+      allow read, write: if isAuthenticated();
+    }
+
     match /pipelineStages/{stageId} {
-      allow read, write: if isSuperUser() || isSuperAdmin();
+      allow read, write: if isAuthenticated();
     }
-    
-    // ENTITIES
-    match /entities/{entityId} {
-      allow read: if isAuthenticated();
-      allow write: if isSuperUser() || isSuperAdmin();
-    }
-    
-    // AUTOMATION RULES
+
     match /automationRules/{ruleId} {
-      allow read, write: if isSuperUser() || isSuperAdmin();
+      allow read, write: if isAuthenticated();
     }
-    
-    // AUDIT LOGS
+
     match /auditLogs/{logId} {
       allow read: if isAuthenticated();
+      // Allow any authenticated user to create a log entry
       allow create: if isAuthenticated();
+      // Logs should be immutable, so no update or delete
+      allow update, delete: if false;
     }
-    
-    // SETTINGS (e.g., Theme)
-    match /settings/theme {
-       allow read: if isAuthenticated();
-       allow write: if isSuperUser() || isSuperAdmin();
+
+    match /settings/{docId} {
+      // Allow any authenticated user to read settings (for logo on login page)
+      allow read: if isAuthenticated();
+      // Allow super roles to write/create settings
+      allow write: if isSuperRole();
     }
   }
 }
