@@ -4,7 +4,7 @@
 
 import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { CalendarIcon, PlusCircle } from "lucide-react";
+import { CalendarIcon, PlusCircle, ChevronsUpDown, Check } from "lucide-react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { format, formatISO } from "date-fns";
@@ -19,6 +19,7 @@ import { logAudit } from "@/lib/audit-log";
 
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
@@ -37,12 +38,25 @@ const leadSchema = z.object({
   contractEndDate: z.date(),
 });
 
-export function AddLeadDialog() {
+interface AddLeadDialogProps {
+    sectors: string[];
+    onSectorAdded: (sector: string) => void;
+}
+
+export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
   const [open, setOpen] = React.useState(false);
   const [entities, setEntities] = React.useState<Entity[]>([]);
   const [stages, setStages] = React.useState<Stage[]>([]);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  const [allSectors, setAllSectors] = React.useState<string[]>(sectors);
+  const [comboboxOpen, setComboboxOpen] = React.useState(false);
+  const [inputValue, setInputValue] = React.useState('');
+
+  React.useEffect(() => {
+    setAllSectors(sectors);
+  }, [sectors]);
 
   const form = useForm<z.infer<typeof leadSchema>>({
     resolver: zodResolver(leadSchema),
@@ -139,6 +153,10 @@ export function AddLeadDialog() {
     }
   }
 
+  const filteredSectors = allSectors.filter(sector => sector.toLowerCase().includes(inputValue.toLowerCase()));
+  const showAddOption = inputValue && !filteredSectors.some(s => s.toLowerCase() === inputValue.toLowerCase());
+
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
@@ -169,15 +187,85 @@ export function AddLeadDialog() {
                 </FormItem>
               )}
             />
-             <FormField
+            <FormField
               control={form.control}
               name="sector"
               render={({ field }) => (
-                <FormItem>
+                <FormItem className="flex flex-col">
                   <FormLabel>Sector</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Technology" {...field} />
-                  </FormControl>
+                  <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                    <PopoverTrigger asChild>
+                      <FormControl>
+                        <Button
+                          variant="outline"
+                          role="combobox"
+                          className={cn(
+                            "w-full justify-between",
+                            !field.value && "text-muted-foreground"
+                          )}
+                        >
+                          {field.value
+                            ? allSectors.find(
+                                (sector) => sector === field.value
+                              )
+                            : "Select sector"}
+                          <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                        </Button>
+                      </FormControl>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-[375px] p-0">
+                      <Command>
+                        <CommandInput 
+                            placeholder="Search sector..." 
+                            value={inputValue}
+                            onValueChange={setInputValue}
+                        />
+                        <CommandList>
+                            <CommandEmpty>
+                                {showAddOption ? ' ' : 'No sector found.'}
+                            </CommandEmpty>
+                            <CommandGroup>
+                            {filteredSectors.map((sector) => (
+                                <CommandItem
+                                key={sector}
+                                value={sector}
+                                onSelect={() => {
+                                    form.setValue("sector", sector);
+                                    setComboboxOpen(false);
+                                }}
+                                >
+                                <Check
+                                    className={cn(
+                                    "mr-2 h-4 w-4",
+                                    sector === field.value
+                                        ? "opacity-100"
+                                        : "opacity-0"
+                                    )}
+                                />
+                                {sector}
+                                </CommandItem>
+                            ))}
+                             {showAddOption && (
+                                <CommandItem
+                                    value={inputValue}
+                                    onSelect={() => {
+                                        const newSector = inputValue.trim();
+                                        form.setValue("sector", newSector);
+                                        setAllSectors(prev => [...prev, newSector]);
+                                        onSectorAdded(newSector);
+                                        setComboboxOpen(false);
+                                        setInputValue('');
+                                    }}
+                                    >
+                                    <PlusCircle className="mr-2 h-4 w-4" />
+                                    Add: {inputValue}
+                                </CommandItem>
+                                )}
+                            </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
                   <FormMessage />
                 </FormItem>
               )}

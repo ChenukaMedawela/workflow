@@ -188,7 +188,7 @@ export default function LeadsPage() {
                         <Download className="mr-2 h-4 w-4" />
                         Export
                     </Button>
-                    <AddLeadDialog />
+                    <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
                 </div>
             </PageHeader>
 
