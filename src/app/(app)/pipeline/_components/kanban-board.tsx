@@ -12,11 +12,13 @@ interface KanbanBoardProps {
   activeStages: Stage[];
   isolatedStages: Stage[];
   leadsByStage: { [key: string]: Lead[] };
+  sectors: string[];
+  onSectorAdded: (sector: string) => void;
   automationRules: AutomationRule[];
   onDragEnd: (result: DropResult) => void;
 }
 
-export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, automationRules, onDragEnd }: KanbanBoardProps) {
+export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, sectors, onSectorAdded, automationRules, onDragEnd }: KanbanBoardProps) {
   const allStages = [...activeStages, ...isolatedStages];
   
   return (
@@ -35,7 +37,7 @@ export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, automa
                           <ScrollArea className="flex-1">
                               <div className="space-y-2 h-full min-h-[100px] p-2">
                                   {(leadsByStage[stage.id] || []).map((lead, index) => (
-                                      <KanbanCard key={lead.id} lead={lead} index={index} stages={allStages} automationRules={automationRules} />
+                                      <KanbanCard key={lead.id} lead={lead} index={index} stages={allStages} sectors={sectors} onSectorAdded={onSectorAdded} automationRules={automationRules} />
                                   ))}
                                   {provided.placeholder}
                               </div>
@@ -63,7 +65,7 @@ export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, automa
                           <ScrollArea className="flex-1">
                               <div className="space-y-2 h-full min-h-[100px] p-2">
                                   {(leadsByStage[stage.id] || []).map((lead, index) => (
-                                      <KanbanCard key={lead.id} lead={lead} index={index} stages={allStages} automationRules={automationRules} />
+                                      <KanbanCard key={lead.id} lead={lead} index={index} stages={allStages} sectors={sectors} onSectorAdded={onSectorAdded} automationRules={automationRules} />
                                   ))}
                                   {provided.placeholder}
                               </div>
@@ -78,3 +80,5 @@ export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, automa
     </DragDropContext>
   );
 }
+
+    

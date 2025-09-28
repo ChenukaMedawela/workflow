@@ -289,9 +289,9 @@ export default function LeadsPage() {
                                             <TableCell>{getStageName(lead.stageId)}</TableCell>
                                             <TableCell>{lead.sector || 'N/A'}</TableCell>
                                             <TableCell>{getOwnerEntityName(lead)}</TableCell>
-                                            <TableCell>{lead.contractType || 'N/A'}</TableCell>
-                                            <TableCell>{isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), "PPP") : 'N/A'}</TableCell>
-                                            <TableCell>{isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), "PPP") : 'N/A'}</TableCell>
+                                            <TableCell>{lead.contractType || 'N_A'}</TableCell>
+                                            <TableCell>{isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), "PPP") : 'N_A'}</TableCell>
+                                            <TableCell>{isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), "PPP") : 'N_A'}</TableCell>
                                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                 <Button variant="outline" size="sm" asChild>
                                                     <Link href={`/leads/${lead.id}`}>
@@ -359,6 +359,8 @@ export default function LeadsPage() {
                     lead={selectedLead}
                     stages={stages}
                     entities={entities}
+                    sectors={sectors}
+                    onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])}
                     open={isEditDialogOpen}
                     onOpenChange={setIsEditDialogOpen}
                     automationRules={automationRules}
@@ -367,3 +369,5 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    

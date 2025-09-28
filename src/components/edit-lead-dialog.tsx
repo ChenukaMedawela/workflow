@@ -35,6 +35,9 @@ import { logAudit } from "@/lib/audit-log";
 import { Separator } from "./ui/separator";
 import { Timeline } from "./ui/timeline";
 import { cn } from "@/lib/utils";
+import { Popover, PopoverContent, PopoverTrigger } from "./ui/popover";
+import { Check, ChevronsUpDown, PlusCircle } from "lucide-react";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "./ui/command";
 
 const formSchema = z.object({
     accountName: z.string().min(2, { message: "Account name must be at least 2 characters." }),
@@ -52,6 +55,8 @@ interface EditLeadDialogProps {
     lead: Lead;
     stages: Stage[];
     entities: Entity[];
+    sectors: string[];
+    onSectorAdded: (sector: string) => void;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     children?: React.ReactNode;
@@ -60,10 +65,18 @@ interface EditLeadDialogProps {
 
 const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
 
-export function EditLeadDialog({ lead, stages, entities, open, onOpenChange, children, automationRules }: EditLeadDialogProps) {
+export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded, open, onOpenChange, children, automationRules }: EditLeadDialogProps) {
     const router = useRouter();
     const [shake, setShake] = useState(false);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
+    
+    const [allSectors, setAllSectors] = useState<string[]>(sectors);
+    const [comboboxOpen, setComboboxOpen] = useState(false);
+    const [inputValue, setInputValue] = useState('');
+
+    useEffect(() => {
+        setAllSectors(sectors);
+    }, [sectors]);
 
     const form = useForm<z.infer<typeof formSchema>>({
         resolver: zodResolver(formSchema),
@@ -179,6 +192,9 @@ export function EditLeadDialog({ lead, stages, entities, open, onOpenChange, chi
     const trigger = children ? (
         <DialogTrigger asChild>{children}</DialogTrigger>
     ) : null;
+    
+    const filteredSectors = allSectors.filter(sector => sector.toLowerCase().includes(inputValue.toLowerCase()));
+    const showAddOption = inputValue && !filteredSectors.some(s => s.toLowerCase() === inputValue.toLowerCase());
 
     return (
         <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -233,18 +249,91 @@ export function EditLeadDialog({ lead, stages, entities, open, onOpenChange, chi
                                     </FormItem>
                                 )}
                                 />
-                            <FormField
-                            control={form.control}
-                            name="sector"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Sector</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="Technology" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
+                             <FormField
+                                control={form.control}
+                                name="sector"
+                                render={({ field }) => (
+                                    <FormItem className="flex flex-col">
+                                        <FormLabel>Sector</FormLabel>
+                                        <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                                            <PopoverTrigger asChild>
+                                            <FormControl>
+                                                <Button
+                                                variant="outline"
+                                                role="combobox"
+                                                className={cn(
+                                                    "w-full justify-between",
+                                                    !field.value && "text-muted-foreground"
+                                                )}
+                                                >
+                                                {field.value
+                                                    ? allSectors.find(
+                                                        (sector) => sector === field.value
+                                                    )
+                                                    : "Select sector"}
+                                                <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                                </Button>
+                                            </FormControl>
+                                            </PopoverTrigger>
+                                            <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                                                <Command>
+                                                    <CommandInput 
+                                                        placeholder="Search sector..." 
+                                                        value={inputValue}
+                                                        onValueChange={setInputValue}
+                                                    />
+                                                    <CommandList>
+                                                        <CommandEmpty>
+                                                            {showAddOption ? ' ' : 'No sector found.'}
+                                                        </CommandEmpty>
+                                                        <CommandGroup>
+                                                        {filteredSectors.map((sector) => (
+                                                            <CommandItem
+                                                            key={sector}
+                                                            value={sector}
+                                                            onSelect={() => {
+                                                                form.setValue("sector", sector);
+                                                                setComboboxOpen(false);
+                                                            }}
+                                                            >
+                                                            <Check
+                                                                className={cn(
+                                                                "mr-2 h-4 w-4",
+                                                                sector === field.value
+                                                                    ? "opacity-100"
+                                                                    : "opacity-0"
+                                                                )}
+                                                            />
+                                                            {sector}
+                                                            </CommandItem>
+                                                        ))}
+                                                        {showAddOption && (
+                                                            <CommandItem
+                                                                value={inputValue}
+                                                                onSelect={() => {
+                                                                    const newSector = inputValue.trim();
+                                                                    form.setValue("sector", newSector, { shouldDirty: true });
+                                                                    if (!allSectors.includes(newSector)) {
+                                                                        const updatedSectors = [...allSectors, newSector];
+                                                                        setAllSectors(updatedSectors);
+                                                                        onSectorAdded(newSector);
+                                                                    }
+                                                                    setComboboxOpen(false);
+                                                                    setInputValue('');
+                                                                }}
+                                                                >
+                                                                <PlusCircle className="mr-2 h-4 w-4" />
+                                                                Add: {inputValue}
+                                                            </CommandItem>
+                                                            )}
+                                                        </CommandGroup>
+                                                    </CommandList>
+                                                </Command>
+                                            </PopoverContent>
+                                        </Popover>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
                             <FormField
                                 control={form.control}
@@ -289,7 +378,7 @@ export function EditLeadDialog({ lead, stages, entities, open, onOpenChange, chi
                             render={({ field }) => (
                                 <FormItem>
                                 <FormLabel>Contract Type</FormLabel>
-                                <Select onValuechange={field.onChange} defaultValue={field.value}>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
                                     <FormControl>
                                     <SelectTrigger>
                                         <SelectValue placeholder="Select contract type" />
@@ -350,3 +439,5 @@ export function EditLeadDialog({ lead, stages, entities, open, onOpenChange, chi
         </Dialog>
     );
 }
+
+    

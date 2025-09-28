@@ -18,6 +18,7 @@ export default function PipelinePage() {
     const [leads, setLeads] = useState<Lead[]>([]);
     const [stages, setStages] = useState<Stage[]>([]);
     const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
+    const [sectors, setSectors] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
     const { user, hasRole } = useAuth();
@@ -47,6 +48,9 @@ export default function PipelinePage() {
                     const globalStage = fetchedStages.find(s => s.name === 'Global');
                     leadsList = leadsList.filter(lead => lead.ownerEntityId === user.entityId || lead.stageId === globalStage?.id);
                 }
+
+                const uniqueSectors = [...new Set(leadsList.map(lead => lead.sector).filter(Boolean))] as string[];
+                setSectors(uniqueSectors);
                 setLeads(leadsList);
                 setLoading(false);
             });
@@ -123,7 +127,7 @@ export default function PipelinePage() {
                 description="Visualize and manage your sales flow."
             >
                  <div className="flex items-center gap-2">
-                    <AddLeadDialog />
+                    <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
                 </div>
             </PageHeader>
 
@@ -137,6 +141,8 @@ export default function PipelinePage() {
                         activeStages={activeStages} 
                         isolatedStages={isolatedStages} 
                         leadsByStage={leadsByStage}
+                        sectors={sectors}
+                        onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])}
                         automationRules={automationRules} 
                         onDragEnd={onDragEnd} 
                     />
@@ -145,3 +151,5 @@ export default function PipelinePage() {
         </div>
     );
 }
+
+    

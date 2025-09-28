@@ -7,26 +7,27 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AutomationRule, Lead, Stage, Entity } from '@/lib/types';
 import { Badge } from '@/components/ui/badge';
 import { EditLeadDialog } from '@/components/edit-lead-dialog';
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
 interface KanbanCardProps {
   lead: Lead;
   index: number;
   stages: Stage[];
+  sectors: string[];
+  onSectorAdded: (sector: string) => void;
   automationRules?: AutomationRule[];
 }
 
-export function KanbanCard({ lead, index, stages, automationRules }: KanbanCardProps) {
+export function KanbanCard({ lead, index, stages, sectors, onSectorAdded, automationRules }: KanbanCardProps) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [entities, setEntities] = useState<Entity[]>([]);
 
   useEffect(() => {
-      const fetchEntities = async () => {
-          const entitiesSnapshot = await getDocs(collection(db, 'entities'));
-          setEntities(entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity)));
-      };
-      fetchEntities();
+      const unsub = onSnapshot(collection(db, 'entities'), (snapshot) => {
+        setEntities(snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity)))
+      });
+      return () => unsub();
   }, []);
 
   return (
@@ -43,6 +44,8 @@ export function KanbanCard({ lead, index, stages, automationRules }: KanbanCardP
                 lead={lead}
                 stages={stages}
                 entities={entities}
+                sectors={sectors}
+                onSectorAdded={onSectorAdded}
                 open={isEditDialogOpen}
                 onOpenChange={setIsEditDialogOpen}
                 automationRules={automationRules}
@@ -65,3 +68,5 @@ export function KanbanCard({ lead, index, stages, automationRules }: KanbanCardP
     </Draggable>
   );
 }
+
+    
