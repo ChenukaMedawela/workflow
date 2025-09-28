@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -346,7 +347,7 @@ export default function ManageLeadPage() {
                         <CardTitle>Contract Details</CardTitle>
                         <CardDescription>Information about the contract agreement.</CardDescription>
                     </CardHeader>
-                    <CardContent className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 pt-6">
+                    <CardContent className="grid md:grid-cols-2 gap-6 pt-6">
                         <FormField
                             control={form.control}
                             name="contractType"
