@@ -404,9 +404,22 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
                                 render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Contract Duration (months)</FormLabel>
-                                    <FormControl>
-                                        <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))} />
-                                    </FormControl>
+                                    <Select onValueChange={(value) => field.onChange(Number(value))} value={String(field.value ?? '')}>
+                                        <FormControl>
+                                        <SelectTrigger>
+                                            <SelectValue placeholder="Select duration" />
+                                        </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                        <SelectItem value="1">1 Month</SelectItem>
+                                        <SelectItem value="3">3 Months</SelectItem>
+                                        <SelectItem value="6">6 Months</SelectItem>
+                                        <SelectItem value="12">12 Months</SelectItem>
+                                        <SelectItem value="18">18 Months</SelectItem>
+                                        <SelectItem value="24">24 Months</SelectItem>
+                                        <SelectItem value="36">36 Months</SelectItem>
+                                        </SelectContent>
+                                    </Select>
                                     <FormMessage />
                                 </FormItem>
                                 )}
@@ -456,3 +469,5 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
         </Dialog>
     );
 }
+
+    

@@ -370,17 +370,30 @@ export default function ManageLeadPage() {
                             )}
                         />
                         <FormField
-                            control={form.control}
-                            name="contractDuration"
-                            render={({ field }) => (
+                          control={form.control}
+                          name="contractDuration"
+                          render={({ field }) => (
                             <FormItem>
-                                <FormLabel>Contract Duration (months)</FormLabel>
+                              <FormLabel>Contract Duration (months)</FormLabel>
+                              <Select onValueChange={(value) => field.onChange(Number(value))} value={String(field.value ?? '')}>
                                 <FormControl>
-                                    <Input type="number" {...field} onChange={e => field.onChange(e.target.value === '' ? 0 : Number(e.target.value))} />
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select duration" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
+                                <SelectContent>
+                                  <SelectItem value="1">1 Month</SelectItem>
+                                  <SelectItem value="3">3 Months</SelectItem>
+                                  <SelectItem value="6">6 Months</SelectItem>
+                                  <SelectItem value="12">12 Months</SelectItem>
+                                  <SelectItem value="18">18 Months</SelectItem>
+                                  <SelectItem value="24">24 Months</SelectItem>
+                                  <SelectItem value="36">36 Months</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
                             </FormItem>
-                            )}
+                          )}
                         />
                         <FormField
                             control={form.control}
@@ -441,3 +454,5 @@ export default function ManageLeadPage() {
     </>
   );
 }
+
+    
