@@ -1,65 +1,82 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    
-    // Helper function to check if a user has a specific role
-    function hasRole(role) {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
-    }
-    
-    function isOneOfRoles(roles) {
-      let userRole = get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
-      return userRole in roles;
+  
+    function isAuthenticated() {
+      return request.auth != null;
     }
 
-    // Users can read their own data.
-    // Admins/Super Users can read/write any user data.
-    // New users can create their own user document during signup.
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+
+    function getRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function isSuperUser() {
+      return isAuthenticated() && getRole() == 'Super User';
+    }
+    
+    function isSuperAdmin() {
+      return isAuthenticated() && getRole() == 'Super Admin';
+    }
+
+    function isAdmin() {
+      return isAuthenticated() && getRole() == 'Admin';
+    }
+
+    function isAtLeastAdmin() {
+      return isAuthenticated() && (isAdmin() || isSuperAdmin() || isSuperUser());
+    }
+
+    // Default deny all
+    match /{document=**} {
+      allow read, write: if false;
+    }
+    
+    // USERS
     match /users/{userId} {
-      allow read: if request.auth.uid == userId || isOneOfRoles(['Admin', 'Super Admin', 'Super User']);
-      allow create: if request.auth.uid == userId;
-      allow update, delete: if isOneOfRoles(['Admin', 'Super Admin', 'Super User']);
-    }
-
-    // Authenticated users can manage leads.
-    match /leads/{leadId} {
-      allow read, write: if request.auth != null;
-    }
-
-    // Super Admins/Super Users can manage pipeline stages.
-    // Other authenticated users can read them.
-    match /pipelineStages/{stageId} {
-      allow read: if request.auth != null;
-      allow write: if isOneOfRoles(['Super Admin', 'Super User']);
-    }
-
-    // Authenticated users can read audit logs.
-    // Any authenticated user can create an audit log.
-    match /auditLogs/{logId} {
-      allow read, create: if request.auth != null;
-      allow update, delete: if false; // Logs should be immutable
-    }
-
-    // Super Admins/Super Users can manage entities.
-    // Other authenticated users can read them.
-    match /entities/{entityId} {
-      allow read: if request.auth != null;
-      allow write: if isOneOfRoles(['Super Admin', 'Super User']);
+      allow read: if isOwner(userId) || isAtLeastAdmin();
+      allow create: if isOwner(userId) || isAtLeastAdmin(); // Signup or admin adds user
+      allow update: if isOwner(userId) || isAtLeastAdmin(); // Profile updates or admin changes
+      allow delete: if isAtLeastAdmin(); // Only admins can delete users
     }
     
-    // Super Admins/Super Users can manage automation rules.
-    // Other authenticated users can read them.
-    match /automationRules/{ruleId} {
-        allow read: if request.auth != null;
-        allow write: if isOneOfRoles(['Super Admin', 'Super User']);
+    // LEADS
+    match /leads/{leadId} {
+      // Allow any authenticated user to manage leads. Business logic is on client.
+      allow read, write: if isAuthenticated();
     }
-
-    // Settings can be read by anyone (for login page logo)
-    // but only written by Super Admins/Super Users.
+    
+    // PIPELINE STAGES
+    match /pipelineStages/{stageId} {
+      allow read, write: if isSuperUser() || isSuperAdmin();
+    }
+    
+    // ENTITIES
+    match /entities/{entityId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperUser() || isSuperAdmin();
+    }
+    
+    // AUTOMATION RULES
+    match /automationRules/{ruleId} {
+      allow read, write: if isSuperUser() || isSuperAdmin();
+    }
+    
+    // AUDIT LOGS
+    match /auditLogs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+    }
+    
+    // SETTINGS (e.g., Theme)
     match /settings/theme {
-      allow read: if true;
-      allow write: if request.auth != null && isOneOfRoles(['Super Admin', 'Super User']);
+       allow read: if isAuthenticated();
+       allow write: if isSuperUser() || isSuperAdmin();
     }
   }
 }
