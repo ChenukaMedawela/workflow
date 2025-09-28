@@ -1,64 +1,91 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Helper function to check for super admin roles
+    // Helper function to check user roles
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function getUserRole() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
     function isSuperAdmin() {
-      return request.auth != null && request.auth.token.role in ['Super User', 'Super Admin'];
+      return isSignedIn() && getUserRole() in ['Super Admin', 'Super User'];
     }
 
-    // Helper function to check for admin roles
     function isAdmin() {
-      return request.auth != null && request.auth.token.role in ['Admin', 'Super User', 'Super Admin'];
+      return isSignedIn() && getUserRole() in ['Admin', 'Super Admin', 'Super User'];
     }
     
-    // Helper function to check for any authenticated user
-    function isAuthenticated() {
-        return request.auth != null;
+    function isManager() {
+        return isSignedIn() && getUserRole() in ['Manager', 'Admin', 'Super Admin', 'Super User'];
+    }
+    
+    function isViewer() {
+        return isSignedIn(); // All signed-in users have at least viewer permissions
     }
 
-    // Settings can be read by anyone (for login page logo), but only written by Super Admins.
-    match /settings/{docId} {
-      allow read;
-      allow write: if isSuperAdmin();
+    function isAssignedToEntity(entityId) {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.entityId == entityId;
     }
 
-    // Users can be read by any authenticated user, but only managed by Admins.
+    // Users can read their own data. Admins can read anyone's data.
+    // Users can only be created via the signup function (which runs with admin privileges).
+    // Users can update their own name. Role/entity changes are done by admins.
     match /users/{userId} {
-      allow get: if isAuthenticated();
-      allow list: if isAuthenticated();
-      allow write: if isAdmin();
+      allow read: if isAdmin() || request.auth.uid == userId;
+      allow create: if isSuperAdmin(); // Only super admins can create users directly.
+      allow update: if (isAdmin() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'role', 'entityId'])) || 
+                       (request.auth.uid == userId && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']));
+      allow delete: if isSuperAdmin();
     }
     
-    // Entities can be read by any authenticated user, but only managed by Super Admins.
+    // Entities can be read by any authenticated user.
+    // Only Super Admins can create, update, or delete entities.
     match /entities/{entityId} {
-        allow read: if isAuthenticated();
-        allow write: if isSuperAdmin();
+      allow read: if isSignedIn();
+      allow create, update, delete: if isSuperAdmin();
     }
-
-    // Pipeline stages can be read by any authenticated user, but only managed by Super Admins.
+    
+    // Pipeline Stages can be read by any authenticated user.
+    // Only Super Admins can create, update, or delete stages.
     match /pipelineStages/{stageId} {
-      allow read: if isAuthenticated();
-      allow write: if isSuperAdmin();
+        allow read: if isSignedIn();
+        allow create, update, delete: if isSuperAdmin();
     }
     
-    // Automation rules can be read by any authenticated user, but only managed by Super Admins.
+    // Automation rules can only be managed by Super Admins.
     match /automationRules/{ruleId} {
-        allow read: if isAuthenticated();
+      allow read, write: if isSuperAdmin();
+    }
+    
+    // Audit logs are write-only for authenticated users. They cannot be read, updated, or deleted from the client.
+    match /auditLogs/{logId} {
+        allow read, update, delete: if false;
+        allow create: if isSignedIn();
+    }
+    
+    // Settings can be read by anyone (for theme/logo) but only written by Super Admins.
+    match /settings/{settingId} {
+        allow read: if true;
         allow write: if isSuperAdmin();
     }
 
-    // Leads can be read, created, and updated by any authenticated user.
+    // Leads can be created by any authenticated user.
+    // They can be read/updated by managers if the lead belongs to their entity, or by any admin.
     match /leads/{leadId} {
-      allow read, create, update: if isAuthenticated();
-      allow delete: if isAdmin(); // Only admins can delete leads
+      allow create: if isSignedIn();
+      allow read, update: if isManager() && (isAssignedToEntity(resource.data.ownerEntityId) || resource.data.ownerEntityId == null || resource.data.ownerEntityId == '') || isAdmin();
+      allow delete: if isAdmin();
     }
     
-    // Audit logs are write-only for clients. They cannot be read or updated from the client-side.
-    match /auditLogs/{logId} {
-      allow read, update, delete: if false;
-      allow create: if isAuthenticated();
+    // By default, lock down all other collections
+    match /{document=**} {
+      allow read, write: if false;
     }
   }
 }
