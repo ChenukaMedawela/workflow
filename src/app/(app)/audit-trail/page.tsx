@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Bot, GitCommitHorizontal } from 'lucide-react';
-import { getInitials } from '@/lib/utils';
+import { getInitials, isToday, isYesterday } from '@/lib/utils';
 import { JsonViewer } from '@textea/json-viewer';
 
 
@@ -307,3 +307,5 @@ export default function AuditTrailPage() {
         </div>
     );
 }
+
+    
