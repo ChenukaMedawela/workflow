@@ -45,9 +45,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const userData = userDoc.data() as User;
                 
                 // Check if it's a new login vs a session restoration
-                const isNewLogin = !user || user.id !== userData.id;
-                if (isNewLogin) {
-                    logAudit({ action: 'login', details: { name: userData.name, email: userData.email }, user: userData });
+                if (!user || user.id !== userData.id) {
+                    logAudit({ action: 'login', user: userData });
                     setSessionCookie(firebaseUser.uid); 
                 }
                 
@@ -106,13 +105,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             email: email,
             avatarUrl: `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
             role: role,
-            ...(entityId && { entityId: entityId }),
+            ...(entityId && entityId !== 'global' && { entityId: entityId }),
         };
 
         const userDocRef = doc(db, "users", firebaseUser.uid);
 
         await setDoc(userDocRef, newUser);
-        await logAudit({ action: 'signup', details: { name, email, role }, user: newUser });
+        await logAudit({ action: 'signup', user: newUser });
 
         setUser(newUser); // Manually set user in context after signup
         return newUser;
@@ -135,7 +134,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     if (user) {
-        await logAudit({ action: 'logout', details: { name: user.name, email: user.email }, user });
+        await logAudit({ action: 'logout', user });
     }
     await signOut(auth);
     router.push('/login');
