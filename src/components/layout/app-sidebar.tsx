@@ -74,6 +74,11 @@ import {
         icon: Lightbulb,
         label: "Next Best Action",
       },
+      {
+        href: "/audit-trail",
+        icon: History,
+        label: "Audit Trail",
+      },
     ];
   
     const adminMenuItems = [
