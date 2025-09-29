@@ -18,7 +18,7 @@ import Link from "next/link";
 import { ExternalLink, Edit, X, ChevronDown, Filter, Plus, XCircle, Check } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { ExportDialog } from "./_components/export-dialog";
-import { Checkbox, CheckboxIndicator } from "@/components/ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/audit-log";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -391,11 +391,10 @@ export default function LeadsPage() {
                                                             }
                                                         }}
                                                     >
-                                                        <div className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"}`}>
-                                                            <CheckboxIndicator>
-                                                                <Check className="h-4 w-4" />
-                                                            </CheckboxIndicator>
-                                                        </div>
+                                                        <Checkbox
+                                                            checked={isSelected}
+                                                            className="mr-2"
+                                                        />
                                                         <span>{option}</span>
                                                     </CommandItem>
                                                     );
@@ -614,6 +613,7 @@ export default function LeadsPage() {
     
 
     
+
 
 
 
