@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { ArrowRight, Download } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
+import { ExportDialog } from "./_components/export-dialog";
 
 const contractTypes = ['Annual', 'Monthly', 'One-Time'];
 const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
@@ -138,40 +139,6 @@ export default function LeadsPage() {
         return 'N/A';
     }
 
-    const handleExport = () => {
-        const headers = [
-            "Account Name",
-            "Stage",
-            "Sector",
-            "Owner Entity",
-            "Contract Type",
-            "Contract Start",
-            "Contract End",
-            "Amount"
-        ];
-        const rows = filteredLeads.map(lead => [
-            lead.accountName,
-            getStageName(lead.stageId),
-            lead.sector,
-            getOwnerEntityName(lead),
-            lead.contractType,
-            isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), "yyyy-MM-dd") : '',
-            isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), "yyyy-MM-dd") : '',
-            lead.amount
-        ].map(String));
-
-        const csvContent = "data:text/csv;charset=utf-8," 
-            + [headers.join(","), ...rows.map(e => e.join(","))].join("\n");
-
-        const encodedUri = encodeURI(csvContent);
-        const link = document.createElement("a");
-        link.setAttribute("href", encodedUri);
-        link.setAttribute("download", `leads-export-${new Date().toISOString().split('T')[0]}.csv`);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-    };
-
     const totalPages = Math.ceil(filteredLeads.length / rowsPerPage);
     const paginatedLeads = filteredLeads.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
 
@@ -184,10 +151,13 @@ export default function LeadsPage() {
                 description="A simple list of all leads and their current stage."
             >
                 <div className="flex items-center gap-2">
-                    <Button variant="outline" onClick={handleExport} disabled={loading || filteredLeads.length === 0}>
-                        <Download className="mr-2 h-4 w-4" />
-                        Export
-                    </Button>
+                    <ExportDialog 
+                        leads={filteredLeads} 
+                        getStageName={getStageName} 
+                        getOwnerEntityName={getOwnerEntityName} 
+                        stages={stages}
+                        entities={entities}
+                    />
                     <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
                 </div>
             </PageHeader>
@@ -369,5 +339,3 @@ export default function LeadsPage() {
         </div>
     );
 }
-
-    
