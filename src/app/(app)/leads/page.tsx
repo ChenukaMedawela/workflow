@@ -384,15 +384,6 @@ export default function LeadsPage() {
                         <Table>
                             <TableHeader className="sticky top-0 bg-card z-10">
                                 <TableRow>
-                                    <TableHead className="w-[50px]">
-                                        {isBulkEditMode && (
-                                            <Checkbox
-                                                checked={selectedLeadIds.length === paginatedLeads.length && paginatedLeads.length > 0}
-                                                onCheckedChange={handleSelectAll}
-                                                aria-label="Select all"
-                                            />
-                                        )}
-                                    </TableHead>
                                     <TableHead>Account Name</TableHead>
                                     <TableHead>Stage</TableHead>
                                     <TableHead>Sector</TableHead>
@@ -400,8 +391,8 @@ export default function LeadsPage() {
                                     <TableHead>Contract Type</TableHead>
                                     <TableHead>Contract Start</TableHead>
                                     <TableHead>Contract End</TableHead>
-                                    <TableHead className="text-right w-[120px]">
-                                        {!isBulkEditMode && (
+                                    <TableHead className="text-right w-[150px]">
+                                        {!isBulkEditMode ? (
                                             <ExportDialog 
                                                 leads={filteredLeads} 
                                                 getStageName={getStageName} 
@@ -409,12 +400,20 @@ export default function LeadsPage() {
                                                 stages={stages}
                                                 entities={entities}
                                             />
+                                        ) : (
+                                            <div className="flex items-center justify-end">
+                                                 <Checkbox
+                                                    checked={selectedLeadIds.length === paginatedLeads.length && paginatedLeads.length > 0}
+                                                    onCheckedChange={handleSelectAll}
+                                                    aria-label="Select all"
+                                                />
+                                            </div>
                                         )}
                                     </TableHead>
                                 </TableRow>
                                 {isBulkEditMode && (
                                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                        <TableCell colSpan={9} className="p-2">
+                                        <TableCell colSpan={8} className="p-2">
                                             <div className="flex items-center gap-2">
                                                  <span className="text-sm font-medium pl-2">{selectedLeadIds.length} selected</span>
                                                 <Select onValueChange={setBulkActionType} value={bulkActionType}>
@@ -442,15 +441,6 @@ export default function LeadsPage() {
                                             className={isBulkEditMode ? 'cursor-pointer' : ''}
                                             data-state={selectedLeadIds.includes(lead.id) ? "selected" : ""}
                                         >
-                                            <TableCell>
-                                                {isBulkEditMode && (
-                                                    <Checkbox
-                                                        checked={selectedLeadIds.includes(lead.id)}
-                                                        onCheckedChange={() => handleSelectLead(lead.id)}
-                                                        aria-label="Select row"
-                                                    />
-                                                )}
-                                            </TableCell>
                                             <TableCell className="font-medium">{lead.accountName || 'N/A'}</TableCell>
                                             <TableCell>{getStageName(lead.stageId)}</TableCell>
                                             <TableCell>{lead.sector || 'N/A'}</TableCell>
@@ -459,7 +449,13 @@ export default function LeadsPage() {
                                             <TableCell>{isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), "PPP") : 'N_A'}</TableCell>
                                             <TableCell>{isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), "PPP") : 'N_A'}</TableCell>
                                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                {!isBulkEditMode && (
+                                                {isBulkEditMode ? (
+                                                     <Checkbox
+                                                        checked={selectedLeadIds.includes(lead.id)}
+                                                        onCheckedChange={() => handleSelectLead(lead.id)}
+                                                        aria-label="Select row"
+                                                    />
+                                                ) : (
                                                     <Button variant="outline" size="sm" asChild>
                                                         <Link href={`/leads/${lead.id}`}>
                                                             Open <ArrowRight className="ml-2 h-4 w-4"/>
@@ -471,7 +467,7 @@ export default function LeadsPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={9} className="h-24 text-center">
+                                        <TableCell colSpan={8} className="h-24 text-center">
                                             No leads found.
                                         </TableCell>
                                     </TableRow>
@@ -537,6 +533,8 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    
 
     
 
