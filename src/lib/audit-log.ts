@@ -1,3 +1,4 @@
+
 'use server';
 
 import { getFirebaseAdmin } from './firebase-admin';
@@ -26,6 +27,11 @@ const getChangedFields = (from: Record<string, any> | undefined, to: Record<stri
     const allKeys = new Set([...Object.keys(from), ...Object.keys(to)]);
 
     for (const key of allKeys) {
+        // Exclude the stageHistory field from the comparison
+        if (key === 'stageHistory') {
+            continue;
+        }
+
         const fromValue = from[key];
         const toValue = to[key];
 
