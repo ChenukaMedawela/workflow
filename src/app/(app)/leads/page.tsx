@@ -220,13 +220,6 @@ export default function LeadsPage() {
                     </Select>
                 </div>
                 <div className="flex-grow" />
-                <ExportDialog 
-                    leads={filteredLeads} 
-                    getStageName={getStageName} 
-                    getOwnerEntityName={getOwnerEntityName} 
-                    stages={stages}
-                    entities={entities}
-                />
             </div>
 
 
@@ -247,7 +240,15 @@ export default function LeadsPage() {
                                     <TableHead>Contract Type</TableHead>
                                     <TableHead>Contract Start</TableHead>
                                     <TableHead>Contract End</TableHead>
-                                    <TableHead><span className="sr-only">Actions</span></TableHead>
+                                    <TableHead className="text-right">
+                                        <ExportDialog 
+                                            leads={filteredLeads} 
+                                            getStageName={getStageName} 
+                                            getOwnerEntityName={getOwnerEntityName} 
+                                            stages={stages}
+                                            entities={entities}
+                                        />
+                                    </TableHead>
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
