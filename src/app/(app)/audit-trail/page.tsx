@@ -103,6 +103,11 @@ const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMa
         else if (action.includes('logo')) subject = 'the logo';
         else if (action.includes('recommendations')) subject = 'AI recommendations';
         
+        // Custom overrides for better grammar
+        if (action === 'update_lead' && details?.leadName) {
+            return `updated the lead '${details.leadName}'`;
+        }
+        
         return `${actionText} ${subject}`;
     }
 
