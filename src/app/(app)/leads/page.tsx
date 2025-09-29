@@ -315,12 +315,26 @@ export default function LeadsPage() {
         { title: "Contract Type", state: contractTypeFilter, setState: setContractTypeFilter, options: contractTypes },
     ];
     
-    const activeFilters = useMemo(() => [
-        ...stageFilter.map(value => ({ type: 'Stage', value, clear: () => setStageFilter(p => p.filter(v => v !== value))})),
-        ...sectorFilter.map(value => ({ type: 'Sector', value, clear: () => setSectorFilter(p => p.filter(v => v !== value))})),
-        ...entityFilter.map(value => ({ type: 'Entity', value, clear: () => setEntityFilter(p => p.filter(v => v !== value))})),
-        ...contractTypeFilter.map(value => ({ type: 'Contract Type', value, clear: () => setContractTypeFilter(p => p.filter(v => v !== value))})),
-    ], [stageFilter, sectorFilter, entityFilter, contractTypeFilter]);
+    const groupedActiveFilters = useMemo(() => {
+        const groups: { [key: string]: { type: string; values: { value: string; clear: () => void }[] } } = {};
+
+        const allActive = [
+            ...stageFilter.map(value => ({ type: 'Stage', value, clear: () => setStageFilter(p => p.filter(v => v !== value)) })),
+            ...sectorFilter.map(value => ({ type: 'Sector', value, clear: () => setSectorFilter(p => p.filter(v => v !== value)) })),
+            ...entityFilter.map(value => ({ type: 'Entity', value, clear: () => setEntityFilter(p => p.filter(v => v !== value)) })),
+            ...contractTypeFilter.map(value => ({ type: 'Contract Type', value, clear: () => setContractTypeFilter(p => p.filter(v => v !== value)) })),
+        ];
+
+        allActive.forEach(({ type, value, clear }) => {
+            if (!groups[type]) {
+                groups[type] = { type, values: [] };
+            }
+            groups[type].values.push({ value, clear });
+        });
+
+        return Object.values(groups);
+    }, [stageFilter, sectorFilter, entityFilter, contractTypeFilter]);
+
 
 
     return (
@@ -353,11 +367,11 @@ export default function LeadsPage() {
                         <Button variant="outline" className="gap-1.5">
                             <Filter className="h-4 w-4" />
                             Filter
-                            {activeFilters.length > 0 && (
+                            {groupedActiveFilters.length > 0 && (
                                 <>
                                  <Separator orientation="vertical" className="h-4 mx-1" />
                                  <Badge variant="secondary" className="rounded-sm px-1 font-normal">
-                                    {activeFilters.length}
+                                    {groupedActiveFilters.reduce((acc, group) => acc + group.values.length, 0)}
                                 </Badge>
                                </>
                             )}
@@ -388,11 +402,9 @@ export default function LeadsPage() {
                                                         }
                                                     }}
                                                 >
-                                                    <Checkbox
-                                                        checked={isSelected}
-                                                        className="mr-2"
-                                                        aria-label={`Select ${option}`}
-                                                    />
+                                                     <div className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"}`}>
+                                                        <Check className="h-4 w-4" />
+                                                    </div>
                                                     <span>{option}</span>
                                                 </CommandItem>
                                                 );
@@ -406,17 +418,23 @@ export default function LeadsPage() {
                 </Popover>
 
                 {isFiltered && (
-                     <div className="flex-1 flex items-center gap-2">
-                         {activeFilters.map(({ type, value, clear }) => (
-                            <Badge key={`${type}-${value}`} variant="outline" className="gap-1.5 pr-1">
+                    <div className="flex-1 flex items-center gap-2">
+                        {groupedActiveFilters.map(({ type, values }) => (
+                            <Badge key={type} variant="outline" className="gap-x-1.5 pr-1 pl-2">
                                 <span className="font-normal text-muted-foreground">{type}:</span>
-                                <span>{value}</span>
-                                <button onClick={clear} className="rounded-full hover:bg-muted p-0.5">
-                                    <XCircle className="h-3 w-3" />
-                                    <span className="sr-only">Remove filter</span>
-                                </button>
+                                <div className="flex items-center gap-1">
+                                    {values.map(({ value, clear }) => (
+                                        <div key={value} className="flex items-center gap-1 bg-muted px-1.5 py-0.5 rounded">
+                                            <span className="text-sm">{value}</span>
+                                            <button onClick={clear} className="rounded-full hover:bg-background p-0.5">
+                                                <XCircle className="h-3 w-3" />
+                                                <span className="sr-only">Remove filter for {value}</span>
+                                            </button>
+                                        </div>
+                                    ))}
+                                </div>
                             </Badge>
-                         ))}
+                        ))}
                     </div>
                 )}
             </div>
@@ -610,6 +628,7 @@ export default function LeadsPage() {
     
 
     
+
 
 
 
