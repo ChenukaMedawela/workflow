@@ -5,7 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Search } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 
 interface ExpandingSearchProps extends React.HTMLAttributes<HTMLDivElement> {
     onSearch?: (query: string) => void;
@@ -39,6 +39,14 @@ export const ExpandingSearch = React.forwardRef<HTMLDivElement, ExpandingSearchP
         }
     }
 
+    const handleClear = () => {
+        setQuery('');
+        if(onSearch) {
+            onSearch('');
+        }
+        inputRef.current?.focus();
+    }
+
     const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
             handleSearch();
@@ -64,18 +72,32 @@ export const ExpandingSearch = React.forwardRef<HTMLDivElement, ExpandingSearchP
                 <Search className="h-5 w-5" />
                 <span className="sr-only">Search</span>
             </Button>
-            <Input
-                ref={inputRef}
-                className={cn(
-                    "absolute left-0 h-10 pr-4 pl-12 rounded-full border transition-all duration-300 ease-in-out",
-                    isExpanded ? "w-full opacity-100" : "w-0 opacity-0"
+            <div className={cn(
+                    "absolute left-0 w-full h-10 transition-all duration-300 ease-in-out",
+                    isExpanded ? "opacity-100" : "opacity-0"
+                )}>
+                <Input
+                    ref={inputRef}
+                    className="h-10 pr-10 pl-12 rounded-full border"
+                    placeholder="Search..."
+                    value={query}
+                    onChange={(e) => setQuery(e.target.value)}
+                    onBlur={handleBlur}
+                    onKeyDown={handleKeyDown}
+                />
+                {query && (
+                    <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 rounded-full"
+                        onClick={handleClear}
+                    >
+                        <X className="h-4 w-4" />
+                        <span className="sr-only">Clear search</span>
+                    </Button>
                 )}
-                placeholder="Search..."
-                value={query}
-                onChange={(e) => setQuery(e.target.value)}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-            />
+            </div>
         </div>
     );
 });
