@@ -21,6 +21,12 @@ interface KanbanBoardProps {
 export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, sectors, onSectorAdded, automationRules, onDragEnd }: KanbanBoardProps) {
   const allStages = [...activeStages, ...isolatedStages];
   
+  const getStageTitle = (stage: Stage) => {
+    if (stage.name === 'Global') return 'Global (Unassigned)';
+    if (stage.isIsolated) return `${stage.name} (Isolated)`;
+    return stage.name;
+  }
+
   return (
     <DragDropContext onDragEnd={onDragEnd}>
         <ScrollArea className="w-full whitespace-nowrap">
@@ -61,7 +67,7 @@ export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, sector
                           {...provided.droppableProps}
                           className={`w-80 flex-shrink-0 rounded-lg flex flex-col ${snapshot.isDraggingOver ? 'bg-secondary' : 'bg-muted/50'}`}
                       >
-                          <h3 className="font-semibold p-3 text-lg bg-slate-200/50 rounded-t-lg sticky top-0 z-10">{stage.name} (Isolated)</h3>
+                          <h3 className="font-semibold p-3 text-lg bg-slate-200/50 rounded-t-lg sticky top-0 z-10">{getStageTitle(stage)}</h3>
                           <ScrollArea className="flex-1">
                               <div className="space-y-2 h-full min-h-[100px] p-2">
                                   {(leadsByStage[stage.id] || []).map((lead, index) => (

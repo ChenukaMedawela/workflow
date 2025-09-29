@@ -13,6 +13,8 @@ import { useToast } from "@/hooks/use-toast";
 import { useAuth } from "@/hooks/use-auth";
 import { logAudit } from "@/lib/audit-log";
 import { formatISO } from "date-fns";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 export default function PipelinePage() {
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -20,8 +22,20 @@ export default function PipelinePage() {
     const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
     const [sectors, setSectors] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showGlobalLeads, setShowGlobalLeads] = useState(false);
     const { toast } = useToast();
     const { user, hasRole } = useAuth();
+
+    useEffect(() => {
+        const storedPreference = localStorage.getItem('showGlobalLeads');
+        if (storedPreference) {
+            setShowGlobalLeads(JSON.parse(storedPreference));
+        }
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem('showGlobalLeads', JSON.stringify(showGlobalLeads));
+    }, [showGlobalLeads]);
 
     useEffect(() => {
         const fetchInitialData = async () => {
@@ -63,8 +77,14 @@ export default function PipelinePage() {
     }, [user, hasRole]);
 
     const activeStages = stages.filter(stage => !stage.isIsolated);
-    const isolatedStages = stages.filter(stage => stage.isIsolated && stage.name !== 'Global');
+    
+    let isolatedStages = stages.filter(stage => stage.isIsolated && stage.name !== 'Global');
+    const globalStage = stages.find(stage => stage.name === 'Global');
 
+    if (showGlobalLeads && globalStage) {
+        isolatedStages.push(globalStage);
+    }
+    
     const leadsByStage = stages.reduce((acc, stage) => {
         acc[stage.id] = leads.filter(lead => lead.stageId === stage.id);
         return acc;
@@ -127,7 +147,11 @@ export default function PipelinePage() {
                 title="Pipeline"
                 description="Visualize and manage your sales flow."
             >
-                 <div className="flex items-center gap-2">
+                 <div className="flex items-center gap-4">
+                    <div className="flex items-center space-x-2">
+                        <Switch id="show-global-leads" checked={showGlobalLeads} onCheckedChange={setShowGlobalLeads} />
+                        <Label htmlFor="show-global-leads">Show Global Leads</Label>
+                    </div>
                     <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
                 </div>
             </PageHeader>
