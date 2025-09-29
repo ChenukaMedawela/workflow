@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import React, { useEffect, useState } from "react";
@@ -14,12 +15,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Edit, X } from "lucide-react";
+import { ArrowRight, Edit, X, ChevronDown } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { ExportDialog } from "./_components/export-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/audit-log";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const contractTypes = ['Annual', 'Monthly', 'One-Time'];
 const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
@@ -190,6 +192,12 @@ export default function LeadsPage() {
             setSelectedLeadIds(paginatedLeads.map(lead => lead.id));
         }
     }
+
+    const handleSelectInverse = () => {
+        const currentPageIds = paginatedLeads.map(lead => lead.id);
+        const newSelectedIds = currentPageIds.filter(id => !selectedLeadIds.includes(id));
+        setSelectedLeadIds(newSelectedIds);
+    };
     
     const handleApplyBulkAction = async () => {
         if (selectedLeadIds.length === 0 || !bulkActionType || !bulkActionValue) {
@@ -407,6 +415,18 @@ export default function LeadsPage() {
                                                     onCheckedChange={handleSelectAll}
                                                     aria-label="Select all"
                                                 />
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" className="h-8 w-8 ml-1">
+                                                            <ChevronDown className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuItem onSelect={handleSelectInverse}>
+                                                            Select Inverse
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
                                             </div>
                                         )}
                                     </TableHead>
