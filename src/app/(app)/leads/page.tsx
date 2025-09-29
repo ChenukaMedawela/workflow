@@ -365,45 +365,42 @@ export default function LeadsPage() {
                     </PopoverTrigger>
                     <PopoverContent className="w-80" align="start">
                          <div className="space-y-4">
-                             <div className="flex items-center justify-between">
+                            <div className="flex items-center justify-between">
                                 <h4 className="font-medium text-sm">Filter Leads</h4>
                                 {isFiltered && <Button variant="link" size="sm" onClick={clearFilters} className="h-auto p-0">Clear all</Button>}
-                             </div>
-                            
-                            {filters.map(({ title, state, setState, options }) => (
-                                <div key={title}>
-                                    <p className="text-xs text-muted-foreground mb-2">{title}</p>
-                                    <Command>
-                                        <CommandInput placeholder={`Filter by ${title.toLowerCase()}...`} />
-                                        <CommandList>
-                                            <CommandEmpty>No results found.</CommandEmpty>
-                                            <CommandGroup>
-                                                {options.map((option) => {
-                                                    const isSelected = state.includes(option);
-                                                    return (
-                                                    <CommandItem
-                                                        key={option}
-                                                        onSelect={() => {
-                                                            if (isSelected) {
-                                                                setState(state.filter((s) => s !== option));
-                                                            } else {
-                                                                setState([...state, option]);
-                                                            }
-                                                        }}
-                                                    >
-                                                        <Checkbox
-                                                            checked={isSelected}
-                                                            className="mr-2"
-                                                        />
-                                                        <span>{option}</span>
-                                                    </CommandItem>
-                                                    );
-                                                })}
-                                            </CommandGroup>
-                                        </CommandList>
-                                    </Command>
-                                </div>
-                            ))}
+                            </div>
+                            <Command>
+                                <CommandInput placeholder="Filter by..." />
+                                <CommandList>
+                                    <CommandEmpty>No results found.</CommandEmpty>
+                                    {filters.map(({ title, state, setState, options }) => (
+                                        <CommandGroup key={title} heading={title}>
+                                            {options.map((option) => {
+                                                const isSelected = state.includes(option);
+                                                return (
+                                                <CommandItem
+                                                    key={option}
+                                                    onSelect={() => {
+                                                        if (isSelected) {
+                                                            setState(state.filter((s) => s !== option));
+                                                        } else {
+                                                            setState([...state, option]);
+                                                        }
+                                                    }}
+                                                >
+                                                    <Checkbox
+                                                        checked={isSelected}
+                                                        className="mr-2"
+                                                        aria-label={`Select ${option}`}
+                                                    />
+                                                    <span>{option}</span>
+                                                </CommandItem>
+                                                );
+                                            })}
+                                        </CommandGroup>
+                                    ))}
+                                </CommandList>
+                            </Command>
                          </div>
                     </PopoverContent>
                 </Popover>
@@ -613,6 +610,7 @@ export default function LeadsPage() {
     
 
     
+
 
 
 
