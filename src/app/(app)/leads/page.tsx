@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ExternalLink, Edit, X, ChevronDown, Filter, Plus, XCircle } from "lucide-react";
+import { ExternalLink, Edit, X, ChevronDown, Filter, Plus, XCircle, Check } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { ExportDialog } from "./_components/export-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
