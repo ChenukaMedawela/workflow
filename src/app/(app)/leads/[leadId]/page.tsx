@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { doc, getDoc, updateDoc } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { Lead, Stage, AutomationRule } from '@/lib/types';
+import { Lead, Stage, AutomationRule, Entity } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,7 @@ const formSchema = z.object({
   sector: z.string().optional(),
   amount: z.coerce.number().min(0, "Amount must be a positive number.").optional(),
   stageId: z.string().optional(),
+  ownerEntityId: z.string().optional(),
   contractType: z.string().optional(),
   contractDuration: z.coerce.number().min(0, "Duration must be a positive number.").optional(),
   contractStartDate: z.coerce.date().optional(),
@@ -50,6 +52,7 @@ export default function ManageLeadPage() {
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [stages, setStages] = useState<Stage[]>([]);
+  const [entities, setEntities] = useState<Entity[]>([]);
   const [allSectors, setAllSectors] = useState<string[]>([]);
   const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -80,6 +83,7 @@ export default function ManageLeadPage() {
             sector: leadData.sector,
             amount: leadData.amount,
             stageId: leadData.stageId,
+            ownerEntityId: leadData.ownerEntityId,
             contractType: leadData.contractType,
             contractDuration: leadData.contractDuration,
             contractStartDate: isValidDate(leadData.contractStartDate) ? new Date(leadData.contractStartDate) : undefined,
@@ -94,6 +98,11 @@ export default function ManageLeadPage() {
         const stagesSnapshot = await getDocs(stagesCollection);
         const stagesList = stagesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Stage)).sort((a, b) => a.order - b.order);
         setStages(stagesList);
+
+        const entitiesCollection = collection(db, 'entities');
+        const entitiesSnapshot = await getDocs(entitiesCollection);
+        const entitiesList = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity));
+        setEntities(entitiesList);
         
         const rulesCollection = collection(db, 'automationRules');
         const rulesSnapshot = await getDocs(rulesCollection);
@@ -137,6 +146,7 @@ export default function ManageLeadPage() {
             sector: lead.sector || '',
             amount: lead.amount || 0,
             stageId: lead.stageId || '',
+            ownerEntityId: lead.ownerEntityId || '',
             contractType: lead.contractType || '',
             contractDuration: lead.contractDuration || 0,
             contractStartDate: isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), 'yyyy-MM-dd') : null,
@@ -148,6 +158,7 @@ export default function ManageLeadPage() {
             sector: data.sector || '',
             amount: data.amount || 0,
             stageId: data.stageId || '',
+            ownerEntityId: data.ownerEntityId || '',
             contractType: data.contractType || '',
             contractDuration: data.contractDuration || 0,
             contractStartDate: data.contractStartDate ? format(data.contractStartDate, 'yyyy-MM-dd') : null,
@@ -371,6 +382,30 @@ export default function ManageLeadPage() {
                             </FormItem>
                             )}
                         />
+                        <FormField
+                            control={form.control}
+                            name="ownerEntityId"
+                            render={({ field }) => (
+                                <FormItem>
+                                    <FormLabel>Owner Entity</FormLabel>
+                                    <Select onValueChange={field.onChange} value={field.value}>
+                                        <FormControl>
+                                            <SelectTrigger>
+                                                <SelectValue placeholder="Select an entity" />
+                                            </SelectTrigger>
+                                        </FormControl>
+                                        <SelectContent>
+                                            {entities.map(entity => (
+                                                <SelectItem key={entity.id} value={entity.id}>
+                                                    {entity.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                    <FormMessage />
+                                </FormItem>
+                            )}
+                        />
                     </CardContent>
                 </Card>
 
@@ -487,4 +522,3 @@ export default function ManageLeadPage() {
     </>
   );
 }
-
