@@ -63,6 +63,7 @@ export function StageCard({ stage, onStageUpdated, onStageDeleted, dragHandlePro
                 to: { [field]: value },
                 details: { stageId: stage.id, stageName: stage.name },
                 user,
+                timestamp: new Date(),
             });
 
             onStageUpdated();

@@ -1,4 +1,3 @@
-
 rules_version = '2';
 
 service cloud.firestore {
@@ -6,6 +5,10 @@ service cloud.firestore {
 
     function getRole() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    }
+
+    function getUserEntityId() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.entityId;
     }
 
     function isSuperRole() {
@@ -21,40 +24,43 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
-      allow create: if request.auth.uid == userId; // Allow users to create their own account doc on signup
+      // Allow a user to read profiles of other users in the same entity.
+      allow read: if isAuthenticated() && (
+        request.auth.uid == userId || 
+        isAdmin() || 
+        resource.data.entityId == getUserEntityId()
+      );
+      allow create: if isAdmin();
       allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /entities/{entityId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperRole();
     }
 
     match /leads/{leadId} {
-      allow read, write: if isAuthenticated();
+        allow read: if isAuthenticated() && (isSuperRole() || resource.data.entityId == getUserEntityId());
+        allow write: if isAuthenticated() && (isSuperRole() || request.resource.data.entityId == getUserEntityId());
     }
 
     match /pipelineStages/{stageId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperRole();
     }
 
     match /automationRules/{ruleId} {
-      allow read, write: if isAuthenticated();
+      allow read, write: if isSuperRole();
     }
 
     match /auditLogs/{logId} {
-      allow read: if isAuthenticated();
-      // Allow any authenticated user to create a log entry
-      allow create: if isAuthenticated();
-      // Logs should be immutable, so no update or delete
-      allow update, delete: if false;
+      // Admins can read all logs, other users can only read logs for their own entity.
+      allow read: if isAdmin() || (isAuthenticated() && resource.data.entityId == getUserEntityId());
+      // Writes should only come from a trusted server environment, not clients.
+      allow create, update, delete: if false;
     }
 
     match /settings/{docId} {
-      // Allow any authenticated user to read settings (for logo on login page)
       allow read: if isAuthenticated();
-      // Allow super roles to write/create settings
       allow write: if isSuperRole();
     }
   }

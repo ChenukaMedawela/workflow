@@ -4,14 +4,20 @@ rules_version = '2';
 service firebase.storage {
   match /b/{bucket}/o {
     
-    // Allow public read access to logos
-    match /logos/{allPaths=**} {
-      allow read;
+    function isSuperRole() {
+      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super User', 'Super Admin'];
     }
-    
-    // Only authenticated users with 'Super User' or 'Super Admin' role can write to the logos folder
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Restrict access to the company logo
     match /logos/logo.png {
-      allow write: if request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super User', 'Super Admin'];
+      // Allow authenticated users to view the logo
+      allow read: if isAuthenticated();
+      // Allow only super roles to modify the logo
+      allow write: if isSuperRole();
     }
   }
 }

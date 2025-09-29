@@ -1,309 +1,328 @@
 
 'use client';
 
-import React, { useEffect, useState, useMemo } from 'react';
-import { collection, onSnapshot, query, orderBy, getDocs } from 'firebase/firestore';
+import { useEffect, useState } from 'react';
+import { collection, getDocs, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
-import { AuditLog, User } from '@/lib/types';
-import { PageHeader } from "@/components/page-header";
-import { Card, CardContent } from '@/components/ui/card';
+import { AuditLog, Entity, Stage, User } from '@/lib/types';
+import { PageHeader } from '@/components/page-header';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { format } from 'date-fns';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Bot, GitCommitHorizontal } from 'lucide-react';
-import { getInitials, isToday, isYesterday } from '@/lib/utils';
-import { JsonViewer } from '@textea/json-viewer';
+import { CreateIcon, DeleteIcon, UpdateIcon } from '@/components/icons';
+import { isToday, isYesterday } from '@/lib/utils';
 
+const formatFieldName = (fieldName: string) => {
+    const words = fieldName.replace(/([A-Z])/g, ' $1');
+    return words.charAt(0).toUpperCase() + words.slice(1);
+};
 
-function AuditLogItem({ log, allUsers }: { log: AuditLog, allUsers: User[] }) {
-    const actorName = log.user.id === 'system' ? 'System' : allUsers.find(u => u.id === log.user.id)?.name || log.user.name;
+const actionIcons: Record<string, JSX.Element> = {
+    'create_lead': <CreateIcon />,
+    'update_lead': <UpdateIcon />,
+    'delete_lead': <DeleteIcon />,
+    'create_entity': <CreateIcon />,
+    'create_pipeline_stage': <CreateIcon />,
+    'delete_pipeline_stage': <DeleteIcon />,
+    'rename_pipeline_stage': <UpdateIcon />,
+    'reorder_pipeline_stages': <UpdateIcon />,
+    'update_stage_property': <UpdateIcon />,
+    'save_automation_rule': <UpdateIcon />,
+    'generate_ai_recommendations': <CreateIcon />,
+    'create_user': <CreateIcon />,
+    'update_user': <UpdateIcon />,
+    'delete_user': <DeleteIcon />,
+    'login': <CreateIcon />,
+    'logout': <DeleteIcon />,
+    'upload_logo': <UpdateIcon />,
+    'remove_logo': <DeleteIcon />,
+    'move_lead': <UpdateIcon />,
+};
 
-    const renderChange = (value: any) => {
-        if (typeof value === 'object' && value !== null) {
-            return (
-                 <Dialog>
-                    <DialogTrigger asChild>
-                        <Button variant="link" className="p-0 h-auto">View Details</Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-2xl">
-                        <DialogHeader>
-                            <DialogTitle>Change Details</DialogTitle>
-                             <DialogDescription>
-                                Detailed view of the changes made.
-                            </DialogDescription>
-                        </DialogHeader>
-                        <div className="max-h-[60vh] overflow-y-auto rounded-md bg-muted/50 p-4">
-                            <JsonViewer 
-                                value={value}
-                                theme="dark"
-                                displayDataTypes={false}
-                                style={{ background: 'transparent' }}
-                             />
-                        </div>
-                    </DialogContent>
-                </Dialog>
-            );
-        }
-        return <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{String(value)}</span>;
-    };
+const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMap: Record<string, string>, entitiesMap: Record<string, string> }) => {
+    const { user, action, from, to, details, timestamp } = log;
 
-    const getActionDescription = () => {
-        const details = log.details || {};
-        switch (log.action) {
-            case 'create_user':
-                return `created user ${details.name || ''}`;
-            case 'delete_user':
-                return `deleted user ${details.deletedUserName || ''}`;
-            case 'update_user':
-                return `updated user ${details.userEmail || ''}`;
-            case 'login':
-                return `logged in`;
-            case 'logout':
-                return `logged out`;
-            case 'create_lead':
-                return `created lead '${details.leadName || ''}'`;
-            case 'update_lead':
-                 return `updated lead '${details.leadName || ''}'`;
-            case 'move_lead':
-                return `moved lead '${details.leadName || ''}'`;
-            case 'create_pipeline_stage':
-                return `created pipeline stage '${details.stageName || ''}'`;
-            case 'rename_pipeline_stage':
-                return `renamed pipeline stage`;
-            case 'delete_pipeline_stage':
-                return `deleted pipeline stage '${details.stageName || ''}'`;
-            case 'update_stage_property':
-                return `updated properties for stage '${details.stageName || ''}'`;
-             case 'reorder_pipeline_stages':
-                return `reordered pipeline stages`;
-            case 'generate_ai_recommendations':
-                return `generated AI automation recommendations`;
-            case 'save_automation_rule':
-                return `saved automation rule for stage '${details.stageName || ''}'`;
-             case 'upload_logo':
-                return `uploaded a new application logo`;
-            case 'remove_logo':
-                return `removed the application logo`;
-             case 'create_entity':
-                return `created a new entity '${details.entityName || ''}'`;
-            case 'signup':
-                return `signed up a new account`;
-            default:
-                return log.action.replace(/_/g, ' ');
-        }
+    const renderValue = (key: string, value: any) => {
+        if (value === null || value === undefined) return <span className="italic text-muted-foreground">not set</span>;
+        if (key === 'stageId') return <span className="font-medium">{stagesMap[value] || value}</span>;
+        if (key === 'entityId' || key === 'ownerEntityId') return <span className="font-medium">{entitiesMap[value] || value}</span>;
+        return <span className="font-medium">{String(value)}</span>;
     };
     
-    const actor = allUsers.find(u => u.id === log.user.id);
+    const getActionText = () => {
+        const actionText = action.replace(/_/g, ' ');
+        let subject = '';
+
+        if (details?.leadName) subject = `the lead '${details.leadName}'`;
+        else if (details?.entityName) subject = `the entity '${details.entityName}'`;
+        else if (details?.stageName) subject = `the stage '${details.stageName}'`;
+        else if (details?.userName) subject = `the user '${details.userName}'`;
+        else if (action.includes('user')) subject = 'a user';
+        else if (action.includes('stage')) subject = 'a stage';
+        else if (action.includes('entity')) subject = 'an entity';
+        else if (action.includes('lead')) subject = 'a lead';
+        else if (action.includes('logo')) subject = 'the logo';
+        else if (action.includes('recommendations')) subject = 'AI recommendations';
+        
+        return `${actionText} ${subject}`;
+    }
+
+    const changes = to ? Object.keys(to)
+        .map(key => {
+            const fromValue = from?.[key];
+            const toValue = to?.[key];
+            if (JSON.stringify(fromValue) === JSON.stringify(toValue)) {
+                return null;
+            }
+            return {
+                key,
+                from: renderValue(key, fromValue),
+                to: renderValue(key, toValue),
+            };
+        })
+        .filter(Boolean)
+        : [];
 
     return (
-        <div className="relative flex items-start gap-4">
-            <div className="absolute left-6 top-1 h-full w-0.5 bg-border -translate-x-1/2" />
-            <div className="relative z-10">
-                <Avatar className="h-12 w-12 border-4 border-background">
-                    {log.user.id === 'system' ? (
-                         <AvatarFallback><Bot className="h-6 w-6" /></AvatarFallback>
-                    ) : (
-                        <>
-                            <AvatarImage src={actor?.avatarUrl} alt={actorName} />
-                            <AvatarFallback>{getInitials(actorName)}</AvatarFallback>
-                        </>
-                    )}
-                </Avatar>
+        <div className="flex gap-x-3">
+            <div className="relative last:after:hidden after:absolute after:top-7 after:bottom-0 after:start-3.5 after:w-px after:-translate-x-1/2 after:bg-border">
+                <div className="relative z-10 w-7 h-7 flex justify-center items-center bg-background rounded-full ring-4 ring-background">
+                    {actionIcons[action] || <UpdateIcon />}
+                </div>
             </div>
-            <div className="pt-2 flex-1">
-                <p className="text-sm">
-                    <span className="font-semibold">{actorName}</span> {getActionDescription()}
+
+            <div className="grow pt-0.5 pb-8">
+                <div className="flex gap-x-2">
+                    <p className="text-sm text-foreground">
+                        <span className="font-semibold">{user?.name || 'System'}</span>
+                        {' '}
+                        {getActionText()}
+                    </p>
+                </div>
+                <p className="text-xs text-muted-foreground mt-1">
+                    {format(new Date(log.timestamp), 'MMMM d, yyyy, h:mm:ss a')}
                 </p>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                    {format(new Date(log.timestamp), "MMM d, yyyy 'at' h:mm:ss a")}
-                </p>
-                {log.from && log.to && (
-                     <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
-                        <GitCommitHorizontal className="h-4 w-4" />
-                        <div className="flex items-center gap-2 flex-wrap">
-                            {Object.entries(log.from).map(([key, value]) => (
-                                <div key={key} className="flex items-center gap-1">
-                                    <span className="capitalize text-xs">{key.replace(/([A-Z])/g, ' $1')}:</span>
-                                    {renderChange(value)}
-                                    <span>→</span>
-                                    {renderChange(log.to[key])}
+
+                {changes.length > 0 && (
+                    <div className="mt-3 space-y-2">
+                        {changes.map(change => (
+                            <div key={change.key} className="text-sm">
+                                <span className="font-medium text-foreground">{formatFieldName(change.key)} changed:</span>
+                                <div className="ml-4 mt-1 flex items-center text-sm">
+                                    <span className="bg-muted px-2 py-0.5 rounded-md">{change.from}</span>
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mx-2 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                                    </svg>
+                                    <span className="bg-muted px-2 py-0.5 rounded-md">{change.to}</span>
                                 </div>
-                            ))}
-                        </div>
+                            </div>
+                        ))}
                     </div>
                 )}
             </div>
         </div>
     );
-}
+};
+
+const DateSection = ({ date, children }: { date: string, children: React.ReactNode }) => (
+    <div>
+        <div className="sticky top-0 z-20 -ml-8 mb-4">
+            <h3 className="text-sm font-semibold bg-background/80 backdrop-blur-sm inline-block px-2 py-1 rounded-md">{date}</h3>
+        </div>
+        <div className="space-y-2">
+            {children}
+        </div>
+    </div>
+);
 
 
 export default function AuditTrailPage() {
-    const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-    const [allUsers, setAllUsers] = useState<User[]>([]);
+    const [logs, setLogs] = useState<AuditLog[]>([]);
+    const [filteredLogs, setFilteredLogs] = useState<AuditLog[]>([]);
     const [loading, setLoading] = useState(true);
-    
-    const [userFilter, setUserFilter] = useState('all');
-    const [actionFilter, setActionFilter] = useState('all');
-    
-    const [currentPage, setCurrentPage] = useState(1);
-    const rowsPerPage = 20;
+    const [stagesMap, setStagesMap] = useState<Record<string, string>>({});
+    const [entitiesMap, setEntitiesMap] = useState<Record<string, string>>({});
+    const [users, setUsers] = useState<User[]>([]);
+
+    // Filters
+    const [actionFilter, setActionFilter] = useState<string>('all');
+    const [entityFilter, setEntityFilter] = useState<string>('all');
+    const [userFilter, setUserFilter] = useState<string>('all');
 
     useEffect(() => {
-        const fetchAllUsers = async () => {
-            const usersSnapshot = await getDocs(collection(db, 'users'));
-            const usersList = usersSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as User);
-            setAllUsers(usersList);
+        const fetchData = async () => {
+            setLoading(true);
+            try {
+                const stagesPromise = getDocs(collection(db, 'pipelineStages'));
+                const entitiesPromise = getDocs(collection(db, 'entities'));
+                const usersPromise = getDocs(collection(db, 'users'));
+                
+                const [stages, entities, users] = await Promise.all([
+                    stagesPromise,
+                    entitiesPromise,
+                    usersPromise,
+                ]);
+
+                const stagesData = stages.docs.reduce((acc, doc) => {
+                    const stage = doc.data() as Stage;
+                    acc[doc.id] = stage.name;
+                    return acc;
+                }, {} as Record<string, string>);
+                setStagesMap(stagesData);
+
+                const entitiesData = entities.docs.reduce((acc, doc) => {
+                    const entity = doc.data() as Entity;
+                    acc[doc.id] = entity.name;
+                    return acc;
+                }, {} as Record<string, string>);
+                setEntitiesMap(entitiesData);
+
+                const usersData = users.docs.map(doc => ({ ...doc.data(), id: doc.id }) as User);
+                setUsers(usersData);
+                
+                const logsQuery = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'));
+                const unsubscribe = onSnapshot(logsQuery, (snapshot) => {
+                    const logsData = snapshot.docs.map(doc => {
+                        const data = doc.data();
+                        return {
+                            id: doc.id,
+                            ...data,
+                            timestamp: data.timestamp.toDate ? data.timestamp.toDate().toISOString() : data.timestamp,
+                        } as AuditLog;
+                    });
+                    setLogs(logsData);
+                    setLoading(false);
+                }, (error) => {
+                    console.error("Error fetching audit logs in real-time:", error);
+                    setLoading(false);
+                });
+
+                return unsubscribe;
+
+            } catch (error) {
+                console.error('Error fetching initial data:', error);
+                setLoading(false);
+            }
         };
-        fetchAllUsers();
 
-        const q = query(collection(db, 'auditLogs'), orderBy('timestamp', 'desc'));
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const logs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as AuditLog));
-            setAuditLogs(logs);
-            setLoading(false);
-        }, (error) => {
-            console.error("Error fetching audit logs: ", error);
-            setLoading(false);
-        });
+        const unsubscribePromise = fetchData();
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribePromise.then(unsub => unsub && unsub());
+        };
     }, []);
 
-    const uniqueActions = useMemo(() => {
-        return [...new Set(auditLogs.map(log => log.action))];
-    }, [auditLogs]);
 
-    const filteredLogs = useMemo(() => {
-        return auditLogs.filter(log => {
-            const userMatch = userFilter === 'all' || log.user.id === userFilter;
-            const actionMatch = actionFilter === 'all' || log.action === actionFilter;
-            return userMatch && actionMatch;
-        });
-    }, [auditLogs, userFilter, actionFilter]);
-    
-    const paginatedLogs = filteredLogs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
-    const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
+    useEffect(() => {
+        let updatedLogs = logs;
 
-    const groupedLogs = useMemo(() => {
-        return paginatedLogs.reduce((acc, log) => {
-            const date = new Date(log.timestamp);
-            let dayLabel;
-            if (isToday(date)) {
-                dayLabel = 'Today';
-            } else if (isYesterday(date)) {
-                dayLabel = 'Yesterday';
-            } else {
-                dayLabel = format(date, 'MMMM d, yyyy');
-            }
-            if (!acc[dayLabel]) {
-                acc[dayLabel] = [];
-            }
-            acc[dayLabel].push(log);
-            return acc;
-        }, {} as Record<string, AuditLog[]>);
-    }, [paginatedLogs]);
+        if (actionFilter !== 'all') {
+            updatedLogs = updatedLogs.filter(log => log.action === actionFilter);
+        }
 
+        if (entityFilter !== 'all') {
+            updatedLogs = updatedLogs.filter(log => log.user.entityId === entityFilter);
+        }
+
+        if (userFilter !== 'all') {
+            updatedLogs = updatedLogs.filter(log => log.user.id === userFilter);
+        }
+
+        setFilteredLogs(updatedLogs);
+    }, [actionFilter, entityFilter, userFilter, logs]);
+
+    const actionTypes = [...new Set(logs.map(log => log.action))].sort();
+
+    const groupedLogs = filteredLogs.reduce((acc, log) => {
+        const logDate = new Date(log.timestamp);
+        let dateKey: string;
+        if (isToday(logDate)) {
+            dateKey = 'Today';
+        } else if (isYesterday(logDate)) {
+            dateKey = 'Yesterday';
+        } else {
+            dateKey = format(logDate, 'MMMM d, yyyy');
+        }
+        
+        if (!acc[dateKey]) {
+            acc[dateKey] = [];
+        }
+        acc[dateKey].push(log);
+        return acc;
+    }, {} as Record<string, AuditLog[]>);
 
     return (
-        <div>
+        <>
             <PageHeader
                 title="Audit Trail"
-                description="View a log of all activities within the system."
+                description="A chronological log of all lead-related activities."
             />
+
             <Card>
-                <CardContent className="p-4">
-                    <div className="flex items-center gap-4 mb-4">
-                        <div className="w-64">
-                            <Select value={userFilter} onValueChange={setUserFilter}>
-                                <SelectTrigger id="user-filter">
-                                    <SelectValue placeholder="Filter by user..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Users</SelectItem>
-                                    <SelectItem value="system">System</SelectItem>
-                                    {allUsers.map(user => (
-                                        <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
-                        <div className="w-64">
-                             <Select value={actionFilter} onValueChange={setActionFilter}>
-                                <SelectTrigger id="action-filter">
-                                    <SelectValue placeholder="Filter by action..." />
-                                </SelectTrigger>
-                                <SelectContent>
-                                    <SelectItem value="all">All Actions</SelectItem>
-                                    {uniqueActions.map(action => (
-                                        <SelectItem key={action} value={action}>
-                                            {action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                                        </SelectItem>
-                                    ))}
-                                </SelectContent>
-                            </Select>
-                        </div>
+                <CardHeader>
+                    <CardTitle>Recent Activities</CardTitle>
+                    <CardDescription>Browse the timeline of changes and updates.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <div className="mb-4 flex flex-wrap items-center gap-2">
+                        {/* Action Type Filter */}
+                        <Select onValueChange={setActionFilter} value={actionFilter}>
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                                <SelectValue placeholder="Filter by action..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Actions</SelectItem>
+                                {actionTypes.map(action => (
+                                    <SelectItem key={action} value={action}>{action.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* Entity Filter */}
+                        <Select onValueChange={setEntityFilter} value={entityFilter}>
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                                <SelectValue placeholder="Filter by entity..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Entities</SelectItem>
+                                {Object.entries(entitiesMap).map(([id, name]) => (
+                                    <SelectItem key={id} value={id}>{name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+
+                        {/* User Filter */}
+                        <Select onValueChange={setUserFilter} value={userFilter}>
+                            <SelectTrigger className="w-full sm:w-[180px]">
+                                <SelectValue placeholder="Filter by user..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                <SelectItem value="all">All Users</SelectItem>
+                                {users.map(user => (
+                                    <SelectItem key={user.id} value={user.id}>{user.name}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
                     </div>
 
                     {loading ? (
-                         <div className="flex items-center justify-center h-64">
+                        <div className="flex justify-center items-center h-64">
                             <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
                         </div>
-                    ) : filteredLogs.length === 0 ? (
-                        <div className="text-center py-10 text-muted-foreground">
-                            No audit logs found for the selected filters.
-                        </div>
-                    ) : (
-                         <div className="space-y-8">
-                            {Object.entries(groupedLogs).map(([day, logs]) => (
-                                <div key={day}>
-                                    <h3 className="text-lg font-semibold mb-4 sticky top-0 bg-background/80 backdrop-blur-sm py-2 z-20">{day}</h3>
-                                    <div className="space-y-6">
-                                        {logs.map(log => (
-                                            <AuditLogItem key={log.id} log={log} allUsers={allUsers}/>
-                                        ))}
-                                    </div>
-                                </div>
+                    ) : filteredLogs.length > 0 ? (
+                        <div className="relative pl-8">
+                            {Object.entries(groupedLogs).map(([date, logsForDate]) => (
+                                <DateSection key={date} date={date}>
+                                    {logsForDate.map((log) => <AuditLogItem key={log.id} log={log} stagesMap={stagesMap} entitiesMap={entitiesMap} />)}
+                                </DateSection>
                             ))}
                         </div>
-                    )}
-                    
-                    {!loading && filteredLogs.length > rowsPerPage && (
-                        <div className="flex items-center justify-between mt-6">
-                            <div className="text-sm text-muted-foreground">
-                                Showing {Math.min((currentPage - 1) * rowsPerPage + 1, filteredLogs.length)} to {Math.min(currentPage * rowsPerPage, filteredLogs.length)} of {filteredLogs.length} logs
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                                    disabled={currentPage === 1}
-                                >
-                                    Previous
-                                </Button>
-                                <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                                    disabled={currentPage === totalPages}
-                                >
-                                    Next
-                                </Button>
-                            </div>
-                        </div>
+                    ) : (
+                        <p className="py-10 text-center text-muted-foreground">No audit trail records found for the selected filters.</p>
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </>
     );
 }
+

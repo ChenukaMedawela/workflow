@@ -35,10 +35,7 @@ import { z } from "zod";
 import { Entity, UserRole } from "@/lib/types";
 import React from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { collection, getDocs } from "firebase/firestore";
-import { db } from "@/lib/firebase";
-import { logAudit } from "@/lib/audit-log";
-import { cn } from "@/lib/utils";
+import { createUser } from "@/lib/auth/admin";
 
 const allUserRoles: UserRole[] = ['Super User', 'Super Admin', 'Admin', 'Manager', 'Viewer'];
 
@@ -58,7 +55,7 @@ interface AddUserDialogProps {
 export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
   const [open, setOpen] = React.useState(false);
   const { toast } = useToast();
-  const { signup, user } = useAuth();
+  const { user } = useAuth();
   const form = useForm<z.infer<typeof userSchema>>({
     resolver: zodResolver(userSchema),
     defaultValues: {
@@ -77,21 +74,13 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
       const isSuperRole = values.role === 'Super Admin' || values.role === 'Super User';
       const entityId = isSuperRole ? undefined : (values.entityId === 'global' || !values.entityId ? undefined : values.entityId);
 
-      const newUser = await signup(values.email, values.password, values.name, entityId, values.role);
-      
-      const entityName = entities.find(e => e.id === entityId)?.name || 'Global';
-
-      await logAudit({
-          action: 'create_user',
-          to: {
-            id: newUser.id,
-            name: values.name,
-            email: values.email,
-            role: values.role,
-            entity: entityName,
-          },
-          details: { name: values.name, email: values.email, role: values.role },
-          user,
+      await createUser({
+          name: values.name,
+          email: values.email,
+          password: values.password,
+          role: values.role,
+          entityId,
+          actor: user,
       });
 
       toast({
@@ -104,7 +93,7 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
     } catch (error: any) {
       console.error("Error creating user:", error);
       let description = "An error occurred while creating the user.";
-      if (error.code === 'auth/email-already-in-use') {
+      if (error.message === 'auth/email-already-in-use' || error.message === 'auth/email-already-exists') {
         description = "This email address is already in use by another account.";
       }
       toast({

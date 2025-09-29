@@ -25,7 +25,7 @@ import {
     FormMessage,
   } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/hooks/use-toast";
 import { db } from "@/lib/firebase";
 import { arrayUnion, doc, updateDoc, collection, getDocs } from "firebase/firestore";
 import { useRouter } from "next/navigation";
@@ -70,6 +70,7 @@ const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
 export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded, open, onOpenChange, children, automationRules }: EditLeadDialogProps) {
     const router = useRouter();
     const { user } = useAuth();
+    const { toast } = useToast();
     const [shake, setShake] = useState(false);
     const saveButtonRef = useRef<HTMLButtonElement>(null);
     
@@ -163,6 +164,7 @@ export function EditLeadDialog({ lead, stages, entities, sectors, onSectorAdded,
                 to: updatedLeadPlain,
                 details: { leadId: lead.id, leadName: lead.accountName },
                 user,
+                timestamp: new Date(),
             });
 
             toast({

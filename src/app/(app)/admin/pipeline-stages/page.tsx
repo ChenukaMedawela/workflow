@@ -100,6 +100,7 @@ export default function AdminPipelineStagesPage() {
                 to: { id: docRef.id, ...newStageData },
                 details: { stageName: newStageName },
                 user,
+                timestamp: new Date(),
             });
 
             toast({ title: "Success", description: `Stage "${newStageName}" has been added.` });
@@ -160,6 +161,7 @@ export default function AdminPipelineStagesPage() {
                 from: { order: originalOrder },
                 to: { order: newOrder },
                 user,
+                timestamp: new Date(),
             });
 
             toast({ title: "Stages Reordered", description: "The pipeline stages have been reordered." });

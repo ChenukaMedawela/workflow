@@ -33,6 +33,7 @@ export function DeleteStageDialog({ stageId, stageName, onStageDeleted, children
                 from: { id: stageId, name: stageName },
                 details: { stageName: stageName },
                 user,
+                timestamp: new Date(),
             });
 
             setOpen(false);

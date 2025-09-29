@@ -33,7 +33,7 @@ import { z } from "zod";
 import { Entity, User, UserRole } from "@/lib/types";
 import React, { useEffect } from "react";
 import { useAuth } from "@/hooks/use-auth";
-import { doc, updateDoc } from "firebase/firestore";
+import { doc, updateDoc, deleteField } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { logAudit } from "@/lib/audit-log";
 
@@ -77,41 +77,45 @@ export function EditUserDialog({ user, entities, onUserUpdated, open, onOpenChan
 
   async function onSubmit(values: z.infer<typeof userSchema>) {
     try {
-      const isSuperRole = values.role === 'Super Admin' || values.role === 'Super User';
-      const entityId = isSuperRole ? "" : (values.entityId === 'global' ? '' : values.entityId);
+        const isSuperRole = values.role === 'Super Admin' || values.role === 'Super User';
+        const entityShouldBeRemoved = isSuperRole || !values.entityId || values.entityId === 'global';
 
-      const userRef = doc(db, 'users', user.id);
+        const userRef = doc(db, 'users', user.id);
 
-      const originalUser = {
-        name: user.name,
-        role: user.role,
-        entityId: user.entityId,
-      };
-      
-      const updatedValues: { name: string, role: UserRole, entityId?: string } = {
-        name: values.name,
-        role: values.role
-      };
+        const originalData = {
+            name: user.name,
+            role: user.role,
+            entityId: user.entityId || null,
+        };
+        
+        const updatedDataForFirestore: any = {
+            name: values.name,
+            role: values.role,
+        };
+        
+        const updatedDataForLog: any = {
+            name: values.name,
+            role: values.role,
+            entityId: null
+        };
 
-      if (typeof entityId !== 'undefined') {
-        updatedValues.entityId = entityId;
-      }
+        if (entityShouldBeRemoved) {
+            updatedDataForFirestore.entityId = deleteField();
+        } else {
+            updatedDataForFirestore.entityId = values.entityId;
+            updatedDataForLog.entityId = values.entityId;
+        }
 
-      await updateDoc(userRef, updatedValues);
-      
-      const updatedUser = {
-        name: values.name,
-        role: values.role,
-        entityId: entityId,
-      };
+        await updateDoc(userRef, updatedDataForFirestore);
 
-      await logAudit({
-          action: 'update_user',
-          from: originalUser,
-          to: updatedUser,
-          details: { userId: user.id, userEmail: user.email },
-          user: currentUser,
-      });
+        await logAudit({
+            action: 'update_user',
+            from: originalData,
+            to: updatedDataForLog,
+            details: { userId: user.id, userEmail: user.email },
+            user: currentUser,
+            timestamp: new Date(),
+        });
 
       toast({
         title: "User Updated",

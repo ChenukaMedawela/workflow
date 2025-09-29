@@ -43,14 +43,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
             if (userDoc.exists()) {
                 const userData = userDoc.data() as User;
-                
-                // Check if it's a new login vs a session restoration
-                if (!user || user.id !== userData.id) {
-                    logAudit({ action: 'login', user: userData });
-                    setSessionCookie(firebaseUser.uid); 
-                }
-                
                 setUser(userData);
+                setSessionCookie(firebaseUser.uid);
             } else {
                  const isSigningUp = sessionStorage.getItem('isSigningUp');
                  if (!isSigningUp) {
@@ -86,7 +80,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const login = async (email: string, password: string) => {
-    await signInWithEmailAndPassword(auth, email, password);
+    try {
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const firebaseUser = userCredential.user;
+      const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
+      if (userDoc.exists()) {
+        const userData = userDoc.data() as User;
+        await logAudit({ action: 'login', user: userData, timestamp: new Date() });
+        setSessionCookie(firebaseUser.uid);
+        setUser(userData)
+      }
+    } catch (error) {
+      console.error("Error during login:", error);
+      throw error;
+    }
   };
   
   const signup = async (email: string, password: string, name: string, entityId?: string, role: UserRole = 'Viewer') => {
@@ -111,7 +118,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const userDocRef = doc(db, "users", firebaseUser.uid);
 
         await setDoc(userDocRef, newUser);
-        await logAudit({ action: 'signup', user: newUser });
 
         setUser(newUser); // Manually set user in context after signup
         return newUser;
@@ -134,7 +140,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     if (user) {
-        await logAudit({ action: 'logout', user });
+        await logAudit({ action: 'logout', user, timestamp: new Date() });
     }
     await signOut(auth);
     router.push('/login');

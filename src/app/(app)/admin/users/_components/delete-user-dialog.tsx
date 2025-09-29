@@ -5,11 +5,9 @@ import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from '@/hooks/use-toast';
-import { logAudit } from '@/lib/audit-log';
 import { User } from '@/lib/types';
-import { doc, deleteDoc } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
 import { useAuth } from '@/hooks/use-auth';
+import { deleteUser } from '@/lib/auth/admin';
 
 interface DeleteUserDialogProps {
     userToDelete: User | null;
@@ -37,14 +35,7 @@ export function DeleteUserDialog({ userToDelete, onUserDeleted, open, onOpenChan
 
         setLoading(true);
         try {
-            await deleteDoc(doc(db, "users", userToDelete.id));
-            
-            await logAudit({
-                action: 'delete_user',
-                from: { id: userToDelete.id, name: userToDelete.name, email: userToDelete.email },
-                details: { deletedUserName: userToDelete.name },
-                user: currentUser,
-            });
+            await deleteUser({ userToDelete, actor: currentUser });
 
             onOpenChange(false);
             onUserDeleted();

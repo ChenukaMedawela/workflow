@@ -62,6 +62,8 @@ export default function ManageLeadPage() {
     resolver: zodResolver(formSchema),
   });
 
+  const { formState: { isDirty } } = form;
+
   useEffect(() => {
     if (!leadId) return;
 
@@ -119,51 +121,79 @@ export default function ManageLeadPage() {
 
   async function onSubmit(data: z.infer<typeof formSchema>) {
     if (!lead) return;
-    
-    try {
-      const leadRef = doc(db, 'leads', leadId);
 
-      const updatedData: any = {
-        ...data,
-        amount: data.amount || 0,
-        contractDuration: data.contractDuration || 0,
-        contractStartDate: data.contractStartDate ? formatISO(data.contractStartDate) : null,
-        contractEndDate: data.contractEndDate ? formatISO(data.contractEndDate) : null,
-      };
-
-      if (data.stageId && data.stageId !== lead.stageId) {
-        const now = formatISO(new Date());
-        const newHistoryEntry = { stageId: data.stageId, timestamp: now };
-        updatedData.stageHistory = arrayUnion(newHistoryEntry);
-      }
-      
-      const originalLead = {...lead};
-
-      await updateDoc(leadRef, updatedData);
-      
-      await logAudit({
-        action: 'update_lead',
-        from: originalLead,
-        to: { ...originalLead, ...updatedData },
-        details: { leadId: lead.id, leadName: lead.accountName },
-        user,
-      });
-
-
-      toast({
-        title: 'Lead Updated',
-        description: 'The lead has been successfully updated.',
-      });
-      router.push('/leads');
-    } catch (error) {
-      console.error('Error updating lead: ', error);
-      toast({
-        title: 'Error',
-        description: 'There was an error updating the lead. Please try again.',
-        variant: 'destructive',
-      });
+    if (!isDirty) {
+        toast({
+            title: 'No Changes Detected',
+            description: 'You haven\'t made any changes to the lead details.',
+        });
+        return;
     }
-  }
+
+    try {
+        const leadRef = doc(db, 'leads', leadId);
+        
+        const originalLeadPlain = {
+            accountName: lead.accountName,
+            sector: lead.sector || '',
+            amount: lead.amount || 0,
+            stageId: lead.stageId || '',
+            contractType: lead.contractType || '',
+            contractDuration: lead.contractDuration || 0,
+            contractStartDate: isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), 'yyyy-MM-dd') : null,
+            contractEndDate: isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), 'yyyy-MM-dd') : null,
+        };
+
+        const updatedLeadPlain = {
+            accountName: data.accountName,
+            sector: data.sector || '',
+            amount: data.amount || 0,
+            stageId: data.stageId || '',
+            contractType: data.contractType || '',
+            contractDuration: data.contractDuration || 0,
+            contractStartDate: data.contractStartDate ? format(data.contractStartDate, 'yyyy-MM-dd') : null,
+            contractEndDate: data.contractEndDate ? format(data.contractEndDate, 'yyyy-MM-dd') : null,
+        };
+
+        const updatedDataForFirestore: any = {
+            ...data,
+            amount: data.amount || 0,
+            contractDuration: data.contractDuration || 0,
+            contractStartDate: data.contractStartDate ? formatISO(data.contractStartDate) : null,
+            contractEndDate: data.contractEndDate ? formatISO(data.contractEndDate) : null,
+        };
+
+        if (data.stageId && data.stageId !== lead.stageId) {
+            const now = formatISO(new Date());
+            const newHistoryEntry = { stageId: data.stageId, timestamp: now };
+            updatedDataForFirestore.stageHistory = arrayUnion(newHistoryEntry);
+        }
+
+        await updateDoc(leadRef, updatedDataForFirestore);
+
+        await logAudit({
+            action: 'update_lead',
+            from: originalLeadPlain,
+            to: updatedLeadPlain,
+            details: { leadId: lead.id, leadName: data.accountName },
+            user,
+            timestamp: new Date(),
+        });
+
+        toast({
+            title: 'Lead Updated',
+            description: 'The lead has been successfully updated.',
+        });
+        router.push('/leads');
+    } catch (error) {
+        console.error('Error updating lead: ', error);
+        toast({
+            title: 'Error',
+            description: 'There was an error updating the lead. Please try again.',
+            variant: 'destructive',
+        });
+    }
+}
   
   const activeStages = stages.filter(s => !s.isIsolated);
   const filteredSectors = allSectors.filter(sector => sector.toLowerCase().includes(inputValue.toLowerCase()));
@@ -266,7 +296,7 @@ export default function ManageLeadPage() {
                                                         key={sector}
                                                         value={sector}
                                                         onSelect={() => {
-                                                            form.setValue("sector", sector);
+                                                            form.setValue("sector", sector, { shouldDirty: true });
                                                             setComboboxOpen(false);
                                                         }}
                                                         >
@@ -286,7 +316,7 @@ export default function ManageLeadPage() {
                                                             value={inputValue}
                                                             onSelect={() => {
                                                                 const newSector = inputValue.trim();
-                                                                form.setValue("sector", newSector);
+                                                                form.setValue("sector", newSector, { shouldDirty: true });
                                                                 setAllSectors(prev => [...prev, newSector]);
                                                                 setComboboxOpen(false);
                                                                 setInputValue('');
@@ -437,7 +467,7 @@ export default function ManageLeadPage() {
                 </Card>
                 
                 <div className="flex gap-2">
-                    <Button type="submit">Save Changes</Button>
+                    <Button type="submit" disabled={!isDirty}>Save Changes</Button>
                     <Button variant="outline" onClick={() => router.back()}>Cancel</Button>
                 </div>
             </form>
@@ -448,7 +478,7 @@ export default function ManageLeadPage() {
                 <CardHeader>
                     <CardTitle>Lead Journey</CardTitle>
                     <CardDescription>A timeline of this lead's progression.</CardDescription>
-                </CardHeader>
+                </Header>
                 <CardContent>
                     <Timeline history={lead.stageHistory} stages={stages} lead={lead} automationRules={automationRules} />
                 </CardContent>

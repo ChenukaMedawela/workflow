@@ -47,6 +47,7 @@ export function EditStageDialog({ stage, onStageUpdated, children }: EditStageDi
                 to: { name },
                 details: { stageId: stage.id },
                 user,
+                timestamp: new Date(),
             });
 
             setOpen(false);
