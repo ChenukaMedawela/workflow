@@ -36,6 +36,8 @@ import {
 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 
 const formatFieldName = (fieldName: string) => {
     const words = fieldName.replace(/([A-Z])/g, ' $1');
@@ -190,6 +192,10 @@ export default function AuditTrailPage() {
     const [actionFilter, setActionFilter] = useState<string>('all');
     const [entityFilter, setEntityFilter] = useState<string>('all');
     const [userFilter, setUserFilter] = useState<string>('all');
+    
+    // Pagination
+    const [currentPage, setCurrentPage] = useState(1);
+    const [rowsPerPage, setRowsPerPage] = useState(20);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -271,11 +277,16 @@ export default function AuditTrailPage() {
         }
 
         setFilteredLogs(updatedLogs);
+        setCurrentPage(1); // Reset to first page on filter change
     }, [actionFilter, entityFilter, userFilter, logs]);
+
+    const totalPages = Math.ceil(filteredLogs.length / rowsPerPage);
+    const paginatedLogs = filteredLogs.slice((currentPage - 1) * rowsPerPage, currentPage * rowsPerPage);
+
 
     const actionTypes = [...new Set(logs.map(log => log.action))].sort();
 
-    const groupedLogs = filteredLogs.reduce((acc, log) => {
+    const groupedLogs = paginatedLogs.reduce((acc, log) => {
         const logDate = new Date(log.timestamp);
         let dateKey: string;
         if (isToday(logDate)) {
@@ -364,6 +375,49 @@ export default function AuditTrailPage() {
                     )}
                 </CardContent>
             </Card>
+
+            <div className="flex items-center justify-between mt-4">
+                <div className="text-sm text-muted-foreground">
+                    Showing {Math.min((currentPage - 1) * rowsPerPage + 1, filteredLogs.length)} to {Math.min(currentPage * rowsPerPage, filteredLogs.length)} of {filteredLogs.length} logs
+                </div>
+                <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-2">
+                        <Label htmlFor="rows-per-page">Rows per page</Label>
+                        <Select value={String(rowsPerPage)} onValueChange={(value) => setRowsPerPage(Number(value))}>
+                            <SelectTrigger id="rows-per-page" className="w-20">
+                                <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {[10, 20, 50, 100].map(size => (
+                                    <SelectItem key={size} value={String(size)}>{size}</SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
+                    <div className="text-sm text-muted-foreground">
+                        Page {currentPage} of {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </div>
         </>
     );
 }
+
