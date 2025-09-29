@@ -45,31 +45,31 @@ const formatFieldName = (fieldName: string) => {
 };
 
 const actionIcons: Record<string, JSX.Element> = {
-    'create_lead': <FilePlus2 className="h-5 w-5" />,
-    'update_lead': <FilePenLine className="h-5 w-5" />,
-    'delete_lead': <FileX2 className="h-5 w-5" />,
-    'move_lead': <ArrowRightLeft className="h-5 w-5" />,
+    'create_lead': <FilePlus2 className="h-4 w-4" />,
+    'update_lead': <FilePenLine className="h-4 w-4" />,
+    'delete_lead': <FileX2 className="h-4 w-4" />,
+    'move_lead': <ArrowRightLeft className="h-4 w-4" />,
     
-    'create_user': <UserPlus className="h-5 w-5" />,
-    'update_user': <UserCog className="h-5 w-5" />,
-    'delete_user': <UserX className="h-5 w-5" />,
+    'create_user': <UserPlus className="h-4 w-4" />,
+    'update_user': <UserCog className="h-4 w-4" />,
+    'delete_user': <UserX className="h-4 w-4" />,
     
-    'login': <LogIn className="h-5 w-5" />,
-    'logout': <LogOut className="h-5 w-5" />,
+    'login': <LogIn className="h-4 w-4" />,
+    'logout': <LogOut className="h-4 w-4" />,
     
-    'create_entity': <Building className="h-5 w-5" />,
+    'create_entity': <Building className="h-4 w-4" />,
     
-    'create_pipeline_stage': <PlusCircle className="h-5 w-5" />,
-    'delete_pipeline_stage': <Trash2 className="h-5 w-5" />,
-    'rename_pipeline_stage': <PenSquare className="h-5 w-5" />,
-    'reorder_pipeline_stages': <Replace className="h-5 w-5" />,
-    'update_stage_property': <Wrench className="h-5 w-5" />,
+    'create_pipeline_stage': <PlusCircle className="h-4 w-4" />,
+    'delete_pipeline_stage': <Trash2 className="h-4 w-4" />,
+    'rename_pipeline_stage': <PenSquare className="h-4 w-4" />,
+    'reorder_pipeline_stages': <Replace className="h-4 w-4" />,
+    'update_stage_property': <Wrench className="h-4 w-4" />,
     
-    'save_automation_rule': <Save className="h-5 w-5" />,
-    'generate_ai_recommendations': <Lightbulb className="h-5 w-5" />,
+    'save_automation_rule': <Save className="h-4 w-4" />,
+    'generate_ai_recommendations': <Lightbulb className="h-4 w-4" />,
     
-    'upload_logo': <UploadCloud className="h-5 w-5" />,
-    'remove_logo': <Trash2 className="h-5 w-5" />,
+    'upload_logo': <UploadCloud className="h-4 w-4" />,
+    'remove_logo': <Trash2 className="h-4 w-4" />,
 };
 
 const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMap: Record<string, string>, entitiesMap: Record<string, string> }) => {
@@ -118,36 +118,29 @@ const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMa
 
     return (
         <div className="flex gap-x-3">
-            <div className="relative last:after:hidden after:absolute after:top-7 after:bottom-0 after:start-3.5 after:w-px after:-translate-x-1/2 after:bg-border">
-                <div className="relative z-10 w-7 h-7 flex justify-center items-center bg-background rounded-full ring-4 ring-background text-muted-foreground">
-                    {actionIcons[action] || <PenSquare className="h-5 w-5" />}
+            <div className="relative last:after:hidden after:absolute after:top-6 after:bottom-0 after:start-2.5 after:w-px after:-translate-x-1/2 after:bg-border">
+                <div className="relative z-10 w-5 h-5 flex justify-center items-center bg-background rounded-full ring-4 ring-background text-muted-foreground">
+                    {actionIcons[action] || <PenSquare className="h-4 w-4" />}
                 </div>
             </div>
 
-            <div className="grow pt-0.5 pb-8">
-                <div className="flex gap-x-2">
+            <div className="grow pt-0 pb-4">
+                <div className="flex items-baseline gap-x-2">
                     <p className="text-sm text-foreground">
                         <span className="font-semibold">{user?.name || 'System'}</span>
                         {' '}
                         {getActionText()}
                     </p>
+                    <p className="text-xs text-muted-foreground">
+                        {format(new Date(log.timestamp), 'h:mm a')}
+                    </p>
                 </div>
-                <p className="mt-1 text-xs text-muted-foreground">
-                    {format(new Date(log.timestamp), 'MMMM d, yyyy, h:mm:ss a')}
-                </p>
 
                 {changes.length > 0 && (
-                    <div className="mt-3 space-y-2">
+                    <div className="mt-2 space-y-1">
                         {changes.map(change => (
                             <div key={change.key} className="text-sm">
-                                <span className="font-medium text-foreground">{formatFieldName(change.key)} changed:</span>
-                                <div className="ml-4 mt-1 flex items-center text-sm">
-                                    <span className="bg-muted px-2 py-0.5 rounded-md">{change.from}</span>
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mx-2 text-muted-foreground" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                                    </svg>
-                                    <span className="bg-muted px-2 py-0.5 rounded-md">{change.to}</span>
-                                </div>
+                                <span className="text-muted-foreground">{formatFieldName(change.key)} changed from</span> {change.from} <span className="text-muted-foreground">to</span> {change.to}
                             </div>
                         ))}
                     </div>
@@ -420,4 +413,3 @@ export default function AuditTrailPage() {
         </>
     );
 }
-
