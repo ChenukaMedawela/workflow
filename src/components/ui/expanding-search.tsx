@@ -93,7 +93,7 @@ export const ExpandingSearch = React.forwardRef<HTMLDivElement, ExpandingSearchP
                         className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full"
                         onClick={handleClear}
                     >
-                        <X style={{ width: '7px', height: '7px' }} />
+                        <X className="h-2 w-2" />
                         <span className="sr-only">Clear search</span>
                     </Button>
                 )}
