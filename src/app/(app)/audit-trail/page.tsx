@@ -40,31 +40,31 @@ const formatFieldName = (fieldName: string) => {
 };
 
 const actionIcons: Record<string, JSX.Element> = {
-    'create_lead': <FilePlus2 className="h-5 w-5 text-green-500" />,
-    'update_lead': <FilePenLine className="h-5 w-5 text-blue-500" />,
-    'delete_lead': <FileX2 className="h-5 w-5 text-red-500" />,
-    'move_lead': <ArrowRightLeft className="h-5 w-5 text-purple-500" />,
+    'create_lead': <FilePlus2 className="h-5 w-5" />,
+    'update_lead': <FilePenLine className="h-5 w-5" />,
+    'delete_lead': <FileX2 className="h-5 w-5" />,
+    'move_lead': <ArrowRightLeft className="h-5 w-5" />,
     
-    'create_user': <UserPlus className="h-5 w-5 text-green-500" />,
-    'update_user': <UserCog className="h-5 w-5 text-blue-500" />,
-    'delete_user': <UserX className="h-5 w-5 text-red-500" />,
+    'create_user': <UserPlus className="h-5 w-5" />,
+    'update_user': <UserCog className="h-5 w-5" />,
+    'delete_user': <UserX className="h-5 w-5" />,
     
-    'login': <LogIn className="h-5 w-5 text-gray-500" />,
-    'logout': <LogOut className="h-5 w-5 text-gray-500" />,
+    'login': <LogIn className="h-5 w-5" />,
+    'logout': <LogOut className="h-5 w-5" />,
     
-    'create_entity': <Building className="h-5 w-5 text-green-500" />,
+    'create_entity': <Building className="h-5 w-5" />,
     
-    'create_pipeline_stage': <PlusCircle className="h-5 w-5 text-green-500" />,
-    'delete_pipeline_stage': <Trash2 className="h-5 w-5 text-red-500" />,
-    'rename_pipeline_stage': <PenSquare className="h-5 w-5 text-blue-500" />,
-    'reorder_pipeline_stages': <Replace className="h-5 w-5 text-purple-500" />,
-    'update_stage_property': <Wrench className="h-5 w-5 text-blue-500" />,
+    'create_pipeline_stage': <PlusCircle className="h-5 w-5" />,
+    'delete_pipeline_stage': <Trash2 className="h-5 w-5" />,
+    'rename_pipeline_stage': <PenSquare className="h-5 w-5" />,
+    'reorder_pipeline_stages': <Replace className="h-5 w-5" />,
+    'update_stage_property': <Wrench className="h-5 w-5" />,
     
-    'save_automation_rule': <Save className="h-5 w-5 text-blue-500" />,
-    'generate_ai_recommendations': <Lightbulb className="h-5 w-5 text-yellow-500" />,
+    'save_automation_rule': <Save className="h-5 w-5" />,
+    'generate_ai_recommendations': <Lightbulb className="h-5 w-5" />,
     
-    'upload_logo': <UploadCloud className="h-5 w-5 text-blue-500" />,
-    'remove_logo': <Trash2 className="h-5 w-5 text-red-500" />,
+    'upload_logo': <UploadCloud className="h-5 w-5" />,
+    'remove_logo': <Trash2 className="h-5 w-5" />,
 };
 
 const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMap: Record<string, string>, entitiesMap: Record<string, string> }) => {
@@ -114,8 +114,8 @@ const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMa
     return (
         <div className="flex gap-x-3">
             <div className="relative last:after:hidden after:absolute after:top-7 after:bottom-0 after:start-3.5 after:w-px after:-translate-x-1/2 after:bg-border">
-                <div className="relative z-10 w-7 h-7 flex justify-center items-center bg-background rounded-full ring-4 ring-background">
-                    {actionIcons[action] || <PenSquare className="h-5 w-5 text-gray-500" />}
+                <div className="relative z-10 w-7 h-7 flex justify-center items-center bg-background rounded-full ring-4 ring-background text-muted-foreground">
+                    {actionIcons[action] || <PenSquare className="h-5 w-5" />}
                 </div>
             </div>
 
