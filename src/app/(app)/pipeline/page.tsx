@@ -15,6 +15,7 @@ import { logAudit } from "@/lib/audit-log";
 import { formatISO } from "date-fns";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { ExpandingSearch } from "@/components/ui/expanding-search";
 
 export default function PipelinePage() {
     const [leads, setLeads] = useState<Lead[]>([]);
@@ -23,6 +24,7 @@ export default function PipelinePage() {
     const [sectors, setSectors] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [showGlobalLeads, setShowGlobalLeads] = useState(false);
+    const [searchQuery, setSearchQuery] = useState('');
     const { toast } = useToast();
     const { user, hasRole } = useAuth();
 
@@ -62,6 +64,12 @@ export default function PipelinePage() {
                     const globalStage = fetchedStages.find(s => s.name === 'Global');
                     leadsList = leadsList.filter(lead => lead.ownerEntityId === user.entityId || lead.stageId === globalStage?.id);
                 }
+                
+                if (searchQuery) {
+                    leadsList = leadsList.filter(lead =>
+                        lead.accountName.toLowerCase().includes(searchQuery.toLowerCase())
+                    );
+                }
 
                 const uniqueSectors = [...new Set(leadsList.map(lead => lead.sector).filter(Boolean))] as string[];
                 setSectors(uniqueSectors);
@@ -74,7 +82,7 @@ export default function PipelinePage() {
             };
         });
 
-    }, [user, hasRole]);
+    }, [user, hasRole, searchQuery]);
 
     const activeStages = stages.filter(stage => !stage.isIsolated);
     
@@ -148,6 +156,7 @@ export default function PipelinePage() {
                 description="Visualize and manage your sales flow."
             >
                  <div className="flex items-center gap-4">
+                    <ExpandingSearch onSearch={setSearchQuery} />
                     <div className="flex items-center space-x-2">
                         <Switch id="show-global-leads" checked={showGlobalLeads} onCheckedChange={setShowGlobalLeads} />
                         <Label htmlFor="show-global-leads">Show Global Leads</Label>

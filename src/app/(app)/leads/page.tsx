@@ -22,6 +22,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { useToast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/audit-log";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ExpandingSearch } from "@/components/ui/expanding-search";
 
 const contractTypes = ['Annual', 'Monthly', 'One-Time'];
 const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
@@ -39,6 +40,7 @@ export default function LeadsPage() {
     const [sectorFilter, setSectorFilter] = useState('all');
     const [entityFilter, setEntityFilter] = useState('all');
     const [contractTypeFilter, setContractTypeFilter] = useState('all');
+    const [searchQuery, setSearchQuery] = useState('');
 
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -111,6 +113,12 @@ export default function LeadsPage() {
 
         let filtered = leadsView;
 
+        if (searchQuery) {
+            filtered = filtered.filter(lead =>
+                lead.accountName.toLowerCase().includes(searchQuery.toLowerCase())
+            );
+        }
+
         if (stageFilter !== 'all') {
             const selectedStage = stages.find(s => s.name === stageFilter);
             filtered = filtered.filter(lead => lead.stageId === selectedStage?.id);
@@ -132,7 +140,7 @@ export default function LeadsPage() {
         }
         setFilteredLeads(filtered);
         setCurrentPage(1); // Reset to first page on filter change
-    }, [stageFilter, sectorFilter, entityFilter, contractTypeFilter, allLeads, stages, entities, user, hasRole]);
+    }, [stageFilter, sectorFilter, entityFilter, contractTypeFilter, searchQuery, allLeads, stages, entities, user, hasRole]);
 
     // Handle ESC key press to exit bulk edit mode
     useEffect(() => {
@@ -297,6 +305,7 @@ export default function LeadsPage() {
                 description="A simple list of all leads and their current stage."
             >
                 <div className="flex items-center gap-2">
+                    <ExpandingSearch onSearch={setSearchQuery} />
                     {isBulkEditMode ? (
                         <Button variant="outline" onClick={toggleBulkEditMode}>
                             <X className="mr-2 h-4 w-4" />

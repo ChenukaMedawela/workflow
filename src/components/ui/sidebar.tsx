@@ -787,63 +787,6 @@ const SidebarMenuSubButton = React.forwardRef<
 })
 SidebarMenuSubButton.displayName = "SidebarMenuSubButton"
 
-const SidebarSearch = React.forwardRef<
-  HTMLDivElement,
-  React.ComponentProps<"div">
->(({ className, ...props }, ref) => {
-  const [isExpanded, setIsExpanded] = React.useState(false)
-  const inputRef = React.useRef<HTMLInputElement>(null)
-
-  const handleToggle = () => {
-    setIsExpanded(!isExpanded)
-    if (!isExpanded) {
-      setTimeout(() => {
-        inputRef.current?.focus()
-      }, 150)
-    }
-  }
-
-  return (
-    <div
-      ref={ref}
-      className={cn(
-        "relative flex items-center transition-all duration-300 ease-in-out group-data-[collapsible=icon]:w-8 group-data-[collapsible=icon]:justify-center",
-        isExpanded
-          ? "w-full"
-          : "w-8 justify-center group-data-[collapsible=icon]:w-8",
-        className
-      )}
-      {...props}
-    >
-      <div
-        className={cn(
-          "absolute left-0 flex items-center transition-all duration-300 ease-in-out",
-          isExpanded ? "w-full" : "w-8"
-        )}
-      >
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 shrink-0"
-          onClick={handleToggle}
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-        <Input
-          ref={inputRef}
-          className={cn(
-            "h-8 flex-grow border-none bg-transparent shadow-none transition-all duration-300 ease-in-out focus-visible:ring-0",
-            isExpanded ? "w-full opacity-100 pl-2" : "w-0 opacity-0"
-          )}
-          placeholder="Search..."
-          onBlur={() => setIsExpanded(false)}
-        />
-      </div>
-    </div>
-  )
-})
-SidebarSearch.displayName = "SidebarSearch"
-
 export {
   Sidebar,
   SidebarContent,
@@ -868,6 +811,5 @@ export {
   SidebarRail,
   SidebarSeparator,
   SidebarTrigger,
-  SidebarSearch,
   useSidebar,
 }
