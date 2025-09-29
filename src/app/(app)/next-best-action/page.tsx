@@ -95,7 +95,7 @@ export default function NextBestActionPage() {
                                 <CardDescription>
                                     An overview of the lead's recent activities and business interests.
                                 </CardDescription>
-                            </Header>
+                            </CardHeader>
                             <CardContent>
                                 {selectedLead ? (
                                     <p>Showing activity for {selectedLead.accountName}.</p>
@@ -112,7 +112,7 @@ export default function NextBestActionPage() {
                                 <CardDescription>
                                     Recent social media posts and other relevant links.
                                 </CardDescription>
-                            </Header>
+                            </CardHeader>
                             <CardContent>
                                 {selectedLead ? (
                                     <div className="space-y-4">
