@@ -40,6 +40,9 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 
 const formatFieldName = (fieldName: string) => {
+    if (fieldName === 'ownerEntityId') {
+        return 'Owner Entity';
+    }
     const words = fieldName.replace(/([A-Z])/g, ' $1');
     return words.charAt(0).toUpperCase() + words.slice(1);
 };
