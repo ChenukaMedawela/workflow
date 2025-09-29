@@ -193,7 +193,7 @@ export default function ManageLeadPage() {
             variant: 'destructive',
         });
     }
-}
+  }
   
   const activeStages = stages.filter(s => !s.isIsolated);
   const filteredSectors = allSectors.filter(sector => sector.toLowerCase().includes(inputValue.toLowerCase()));
