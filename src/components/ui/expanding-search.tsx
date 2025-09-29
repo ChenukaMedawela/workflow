@@ -90,7 +90,7 @@ export const ExpandingSearch = React.forwardRef<HTMLDivElement, ExpandingSearchP
                         type="button"
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-6 w-6 rounded-full"
+                        className="absolute right-2 top-1/2 -translate-y-1/2 h-5 w-5 rounded-full"
                         onClick={handleClear}
                     >
                         <X className="h-3 w-3" />
