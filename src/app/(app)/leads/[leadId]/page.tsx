@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -93,7 +92,7 @@ export default function ManageLeadPage() {
 
         const stagesCollection = collection(db, 'pipelineStages');
         const stagesSnapshot = await getDocs(stagesCollection);
-        const stagesList = stagesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Stage).sort((a, b) => a.order - b.order);
+        const stagesList = stagesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Stage)).sort((a, b) => a.order - b.order);
         setStages(stagesList);
         
         const rulesCollection = collection(db, 'automationRules');
@@ -478,7 +477,7 @@ export default function ManageLeadPage() {
                 <CardHeader>
                     <CardTitle>Lead Journey</CardTitle>
                     <CardDescription>A timeline of this lead's progression.</CardDescription>
-                </Header>
+                </CardHeader>
                 <CardContent>
                     <Timeline history={lead.stageHistory} stages={stages} lead={lead} automationRules={automationRules} />
                 </CardContent>
@@ -488,3 +487,4 @@ export default function ManageLeadPage() {
     </>
   );
 }
+
