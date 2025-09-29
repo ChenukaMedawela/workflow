@@ -101,8 +101,8 @@ export default function PipelinePage() {
 
             await logAudit({
                 action: 'move_lead',
-                from: { stage: sourceStage.name },
-                to: { stage: destStage.name },
+                from: { stageId: sourceStage.id },
+                to: { stageId: destStage.id },
                 details: { leadId: draggableId, leadName: lead.accountName },
                 user,
             });
