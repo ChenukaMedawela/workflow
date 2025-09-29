@@ -29,7 +29,7 @@ export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, sector
 
   return (
     <DragDropContext onDragEnd={onDragEnd}>
-        <ScrollArea className="w-full whitespace-nowrap">
+        <ScrollArea className="w-full whitespace-nowrap h-full">
             <div className="flex gap-4 pb-4 h-full">
                 {activeStages.map(stage => (
                   <Droppable key={stage.id} droppableId={stage.id}>
@@ -86,5 +86,3 @@ export function KanbanBoard({ activeStages, isolatedStages, leadsByStage, sector
     </DragDropContext>
   );
 }
-
-    

@@ -142,7 +142,7 @@ export default function PipelinePage() {
     };
     
     return (
-        <div className="h-[calc(100vh-100px)] flex flex-col">
+        <div className="h-[calc(100vh-160px)] flex flex-col">
             <PageHeader
                 title="Pipeline"
                 description="Visualize and manage your sales flow."
