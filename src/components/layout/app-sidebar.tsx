@@ -9,6 +9,7 @@ import {
     SidebarMenuButton,
     SidebarFooter,
     SidebarTrigger,
+    SidebarSearch,
   } from "@/components/ui/sidebar";
   import { Logo } from "@/components/icons";
   import {
@@ -102,6 +103,9 @@ import {
         </SidebarHeader>
         <SidebarContent className="p-2">
           <SidebarMenu>
+             <SidebarMenuItem>
+                <SidebarSearch />
+            </SidebarMenuItem>
             {menuItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
@@ -138,4 +142,3 @@ import {
       </Sidebar>
     );
   }
-  
