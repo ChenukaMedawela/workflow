@@ -2,7 +2,7 @@
 
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { PageHeader } from "@/components/page-header";
 import { AddLeadDialog } from "./_components/add-lead-dialog";
 import { db } from '@/lib/firebase';
@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ExternalLink, Edit, X, ChevronDown } from "lucide-react";
+import { ExternalLink, Edit, X, ChevronDown, Filter, Plus, XCircle } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { ExportDialog } from "./_components/export-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,6 +23,10 @@ import { useToast } from "@/hooks/use-toast";
 import { logAudit } from "@/lib/audit-log";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { ExpandingSearch } from "@/components/ui/expanding-search";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 
 const contractTypes = ['Annual', 'Monthly', 'One-Time'];
 const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
@@ -36,11 +40,14 @@ export default function LeadsPage() {
     const [automationRules, setAutomationRules] = useState<AutomationRule[]>([]);
     const [loading, setLoading] = useState(true);
     const { user, hasRole } = useAuth();
-    const [stageFilter, setStageFilter] = useState('all');
-    const [sectorFilter, setSectorFilter] = useState('all');
-    const [entityFilter, setEntityFilter] = useState('all');
-    const [contractTypeFilter, setContractTypeFilter] = useState('all');
+    
+    // Filters
     const [searchQuery, setSearchQuery] = useState('');
+    const [stageFilter, setStageFilter] = useState<string[]>([]);
+    const [sectorFilter, setSectorFilter] = useState<string[]>([]);
+    const [entityFilter, setEntityFilter] = useState<string[]>([]);
+    const [contractTypeFilter, setContractTypeFilter] = useState<string[]>([]);
+
 
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -119,24 +126,19 @@ export default function LeadsPage() {
             );
         }
 
-        if (stageFilter !== 'all') {
-            const selectedStage = stages.find(s => s.name === stageFilter);
-            filtered = filtered.filter(lead => lead.stageId === selectedStage?.id);
+        if (stageFilter.length > 0) {
+            const stageIds = stages.filter(s => stageFilter.includes(s.name)).map(s => s.id);
+            filtered = filtered.filter(lead => stageIds.includes(lead.stageId || ''));
         }
-        if (sectorFilter !== 'all') {
-            filtered = filtered.filter(lead => lead.sector === sectorFilter);
+        if (sectorFilter.length > 0) {
+            filtered = filtered.filter(lead => sectorFilter.includes(lead.sector));
         }
-        if (entityFilter !== 'all' && isSuper) {
-             if (entityFilter === 'Global') {
-                const globalStage = stages.find(s => s.name === 'Global');
-                filtered = filtered.filter(lead => lead.stageId === globalStage?.id && !lead.ownerEntityId);
-            } else {
-                const selectedEntity = entities.find(e => e.name === entityFilter);
-                filtered = filtered.filter(lead => lead.ownerEntityId === selectedEntity?.id);
-            }
+        if (entityFilter.length > 0 && isSuper) {
+             const entityIds = entities.filter(e => entityFilter.includes(e.name)).map(e => e.id);
+             filtered = filtered.filter(lead => entityIds.includes(lead.ownerEntityId));
         }
-        if (contractTypeFilter !== 'all') {
-            filtered = filtered.filter(lead => lead.contractType === contractTypeFilter);
+        if (contractTypeFilter.length > 0) {
+            filtered = filtered.filter(lead => contractTypeFilter.includes(lead.contractType));
         }
         setFilteredLeads(filtered);
         setCurrentPage(1); // Reset to first page on filter change
@@ -296,6 +298,29 @@ export default function LeadsPage() {
                 return null;
         }
     };
+    
+    const isFiltered = stageFilter.length > 0 || sectorFilter.length > 0 || entityFilter.length > 0 || contractTypeFilter.length > 0;
+
+    const clearFilters = () => {
+        setStageFilter([]);
+        setSectorFilter([]);
+        setEntityFilter([]);
+        setContractTypeFilter([]);
+    };
+
+    const filters = [
+        { title: "Stage", state: stageFilter, setState: setStageFilter, options: stages.map(s => s.name) },
+        { title: "Sector", state: sectorFilter, setState: setSectorFilter, options: sectors },
+        ...(isSuper ? [{ title: "Entity", state: entityFilter, setState: setEntityFilter, options: entities.map(e => e.name) }] : []),
+        { title: "Contract Type", state: contractTypeFilter, setState: setContractTypeFilter, options: contractTypes },
+    ];
+    
+    const activeFilters = useMemo(() => [
+        ...stageFilter.map(value => ({ type: 'Stage', value, clear: () => setStageFilter(p => p.filter(v => v !== value))})),
+        ...sectorFilter.map(value => ({ type: 'Sector', value, clear: () => setSectorFilter(p => p.filter(v => v !== value))})),
+        ...entityFilter.map(value => ({ type: 'Entity', value, clear: () => setEntityFilter(p => p.filter(v => v !== value))})),
+        ...contractTypeFilter.map(value => ({ type: 'Contract Type', value, clear: () => setContractTypeFilter(p => p.filter(v => v !== value))})),
+    ], [stageFilter, sectorFilter, entityFilter, contractTypeFilter]);
 
 
     return (
@@ -305,7 +330,6 @@ export default function LeadsPage() {
                 description="A simple list of all leads and their current stage."
             >
                 <div className="flex items-center gap-2">
-                    <ExpandingSearch onSearch={setSearchQuery} />
                     {isBulkEditMode ? (
                         <Button variant="outline" onClick={toggleBulkEditMode}>
                             <X className="mr-2 h-4 w-4" />
@@ -320,74 +344,85 @@ export default function LeadsPage() {
                     <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
                 </div>
             </PageHeader>
+            
+             <div className="flex items-center gap-2 mb-4">
+                <ExpandingSearch onSearch={setSearchQuery} />
 
-            <div className="mb-4 flex flex-wrap items-end gap-4">
-                <div className="w-64">
-                    <Label htmlFor="stage-filter">Filter by Stage</Label>
-                    <Select value={stageFilter} onValueChange={setStageFilter}>
-                        <SelectTrigger id="stage-filter">
-                            <SelectValue placeholder="Select a stage to filter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Stages</SelectItem>
-                            {stages.map(stage => (
-                                <SelectItem key={stage.id} value={stage.name}>
-                                    {stage.name}
-                                </SelectItem>
+                <Popover>
+                    <PopoverTrigger asChild>
+                        <Button variant="outline" className="gap-1.5">
+                            <Filter className="h-4 w-4" />
+                            Filter
+                            {activeFilters.length > 0 && (
+                                <>
+                                 <Separator orientation="vertical" className="h-4 mx-1" />
+                                 <Badge variant="secondary" className="rounded-sm px-1 font-normal">
+                                    {activeFilters.length}
+                                </Badge>
+                               </>
+                            )}
+                        </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80" align="start">
+                         <div className="space-y-4">
+                             <div className="flex items-center justify-between">
+                                <h4 className="font-medium text-sm">Filter Leads</h4>
+                                {isFiltered && <Button variant="link" size="sm" onClick={clearFilters} className="h-auto p-0">Clear all</Button>}
+                             </div>
+                            
+                            {filters.map(({ title, state, setState, options }) => (
+                                <div key={title}>
+                                    <p className="text-xs text-muted-foreground mb-2">{title}</p>
+                                    <Command>
+                                        <CommandInput placeholder={`Filter by ${title.toLowerCase()}...`} />
+                                        <CommandList>
+                                            <CommandEmpty>No results found.</CommandEmpty>
+                                            <CommandGroup>
+                                                {options.map((option) => {
+                                                    const isSelected = state.includes(option);
+                                                    return (
+                                                    <CommandItem
+                                                        key={option}
+                                                        onSelect={() => {
+                                                            if (isSelected) {
+                                                                setState(state.filter((s) => s !== option));
+                                                            } else {
+                                                                setState([...state, option]);
+                                                            }
+                                                        }}
+                                                    >
+                                                        <div className={`mr-2 flex h-4 w-4 items-center justify-center rounded-sm border border-primary ${isSelected ? "bg-primary text-primary-foreground" : "opacity-50 [&_svg]:invisible"}`}>
+                                                            <Checkbox.Indicator>
+                                                                <Check className="h-4 w-4" />
+                                                            </Checkbox.Indicator>
+                                                        </div>
+                                                        <span>{option}</span>
+                                                    </CommandItem>
+                                                    );
+                                                })}
+                                            </CommandGroup>
+                                        </CommandList>
+                                    </Command>
+                                </div>
                             ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="w-64">
-                    <Label htmlFor="sector-filter">Filter by Sector</Label>
-                    <Select value={sectorFilter} onValueChange={setSectorFilter}>
-                        <SelectTrigger id="sector-filter">
-                            <SelectValue placeholder="Select a sector to filter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Sectors</SelectItem>
-                            {sectors.map(sector => (
-                                <SelectItem key={sector} value={sector}>
-                                    {sector}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                {isSuper && <div className="w-64">
-                    <Label htmlFor="entity-filter">Filter by Owner Entity</Label>
-                    <Select value={entityFilter} onValueChange={setEntityFilter}>
-                        <SelectTrigger id="entity-filter">
-                            <SelectValue placeholder="Select an entity to filter" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Entities</SelectItem>
-                            <SelectItem value="Global">Global (Unassigned)</SelectItem>
-                            {entities.map(entity => (
-                                <SelectItem key={entity.id} value={entity.name}>
-                                    {entity.name}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>}
-                 <div className="w-64">
-                    <Label htmlFor="contract-type-filter">Filter by Contract Type</Label>
-                    <Select value={contractTypeFilter} onValueChange={setContractTypeFilter}>
-                        <SelectTrigger id="contract-type-filter">
-                            <SelectValue placeholder="Select a contract type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Contract Types</SelectItem>
-                            {contractTypes.map(type => (
-                                <SelectItem key={type} value={type}>
-                                    {type}
-                                </SelectItem>
-                            ))}
-                        </SelectContent>
-                    </Select>
-                </div>
-                <div className="flex-grow" />
+                         </div>
+                    </PopoverContent>
+                </Popover>
+
+                {isFiltered && (
+                     <div className="flex-1 flex items-center gap-2">
+                         {activeFilters.map(({ type, value, clear }) => (
+                            <Badge key={`${type}-${value}`} variant="outline" className="gap-1.5 pr-1">
+                                <span className="font-normal text-muted-foreground">{type}:</span>
+                                <span>{value}</span>
+                                <button onClick={clear} className="rounded-full hover:bg-muted p-0.5">
+                                    <XCircle className="h-3 w-3" />
+                                    <span className="sr-only">Remove filter</span>
+                                </button>
+                            </Badge>
+                         ))}
+                    </div>
+                )}
             </div>
 
 
@@ -565,6 +600,8 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    
 
     
 
