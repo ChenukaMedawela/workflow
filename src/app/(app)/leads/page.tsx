@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Edit, X, ChevronDown } from "lucide-react";
+import { ExternalLink, Edit, X, ChevronDown } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { ExportDialog } from "./_components/export-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -66,7 +66,7 @@ export default function LeadsPage() {
             
             const stagesData = stagesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Stage).sort((a,b) => a.order - b.order);
             setStages(stagesData);
-            const entitiesData = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity));
+            const entitiesData = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Entity);
             setEntities(entitiesData);
             const rulesData = rulesSnapshot.docs.map(doc => ({ ...doc.data(), stageId: doc.id }) as AutomationRule);
             setAutomationRules(rulesData);
@@ -478,9 +478,10 @@ export default function LeadsPage() {
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <Button variant="outline" size="sm" asChild>
+                                                    <Button variant="ghost" size="icon" asChild>
                                                         <Link href={`/leads/${lead.id}`}>
-                                                            Open <ArrowRight className="ml-2 h-4 w-4"/>
+                                                            <ExternalLink className="h-4 w-4"/>
+                                                            <span className="sr-only">Open lead</span>
                                                         </Link>
                                                     </Button>
                                                 )}
@@ -555,6 +556,8 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    
 
     
 
