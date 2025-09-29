@@ -31,8 +31,11 @@ import {
     PlusCircle,
     Replace,
     Wrench,
-    Save
+    Save,
+    ChevronDown,
 } from 'lucide-react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 
 const formatFieldName = (fieldName: string) => {
     const words = fieldName.replace(/([A-Z])/g, ' $1');
@@ -152,16 +155,27 @@ const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMa
     );
 };
 
-const DateSection = ({ date, children }: { date: string, children: React.ReactNode }) => (
-    <div>
-        <div className="sticky top-0 z-20 -ml-8 mb-4">
-            <h3 className="text-sm font-semibold bg-background/80 backdrop-blur-sm inline-block px-2 py-1 rounded-md">{date}</h3>
-        </div>
-        <div className="space-y-2">
-            {children}
-        </div>
-    </div>
-);
+const DateSection = ({ date, children }: { date: string; children: React.ReactNode }) => {
+    const [isOpen, setIsOpen] = useState(true);
+
+    return (
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <div className="sticky top-0 z-20 -ml-8 mb-4">
+                <CollapsibleTrigger asChild>
+                    <div className="flex items-center gap-2 cursor-pointer">
+                        <h3 className="text-sm font-semibold bg-background/80 backdrop-blur-sm inline-block px-2 py-1 rounded-md">{date}</h3>
+                        <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", isOpen && "rotate-180")} />
+                    </div>
+                </CollapsibleTrigger>
+            </div>
+            <CollapsibleContent>
+                <div className="space-y-2">
+                    {children}
+                </div>
+            </CollapsibleContent>
+        </Collapsible>
+    );
+};
 
 
 export default function AuditTrailPage() {
