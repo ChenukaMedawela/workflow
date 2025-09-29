@@ -110,6 +110,8 @@ const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMa
         })
         .filter(Boolean)
         : [];
+    
+    const entityName = user.entityId ? entitiesMap[user.entityId] : 'Global';
 
     return (
         <div className="flex gap-x-3">
@@ -127,9 +129,20 @@ const AuditLogItem = ({ log, stagesMap, entitiesMap }: { log: AuditLog, stagesMa
                         {getActionText()}
                     </p>
                 </div>
-                <p className="text-xs text-muted-foreground mt-1">
-                    {format(new Date(log.timestamp), 'MMMM d, yyyy, h:mm:ss a')}
-                </p>
+                <div className="flex items-center gap-2 mt-1">
+                    <p className="text-xs text-muted-foreground">
+                        {format(new Date(log.timestamp), 'MMMM d, yyyy, h:mm:ss a')}
+                    </p>
+                    {entityName && (
+                        <>
+                            <span className="text-xs text-muted-foreground">•</span>
+                            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                                <Building className="h-3 w-3" />
+                                <span>{entityName}</span>
+                            </div>
+                        </>
+                    )}
+                </div>
 
                 {changes.length > 0 && (
                     <div className="mt-3 space-y-2">
