@@ -75,7 +75,7 @@ export default function LeadsPage() {
             
             const stagesData = stagesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Stage).sort((a,b) => a.order - b.order);
             setStages(stagesData);
-            const entitiesData = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Entity);
+            const entitiesData = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity));
             setEntities(entitiesData);
             const rulesData = rulesSnapshot.docs.map(doc => ({ ...doc.data(), stageId: doc.id }) as AutomationRule);
             setAutomationRules(rulesData);
@@ -614,3 +614,4 @@ export default function LeadsPage() {
     
 
     
+
