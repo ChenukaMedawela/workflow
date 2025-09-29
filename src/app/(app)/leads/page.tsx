@@ -5,18 +5,21 @@ import React, { useEffect, useState } from "react";
 import { PageHeader } from "@/components/page-header";
 import { AddLeadDialog } from "./_components/add-lead-dialog";
 import { db } from '@/lib/firebase';
-import { collection, onSnapshot, getDocs, query } from 'firebase/firestore';
+import { collection, onSnapshot, getDocs, query, writeBatch, doc } from 'firebase/firestore';
 import { Lead, Stage, Entity, AutomationRule } from '@/lib/types';
 import { useAuth } from "@/hooks/use-auth";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { format } from "date-fns";
+import { format, formatISO } from "date-fns";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ArrowRight, Download } from "lucide-react";
+import { ArrowRight, Edit, X } from "lucide-react";
 import { EditLeadDialog } from "@/components/edit-lead-dialog";
 import { ExportDialog } from "./_components/export-dialog";
+import { Checkbox } from "@/components/ui/checkbox";
+import { useToast } from "@/hooks/use-toast";
+import { logAudit } from "@/lib/audit-log";
 
 const contractTypes = ['Annual', 'Monthly', 'One-Time'];
 const isValidDate = (date: any) => date && !isNaN(new Date(date).getTime());
@@ -37,6 +40,12 @@ export default function LeadsPage() {
 
     const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
     const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+
+    const [isBulkEditMode, setIsBulkEditMode] = useState(false);
+    const [selectedLeadIds, setSelectedLeadIds] = useState<string[]>([]);
+    const [bulkActionType, setBulkActionType] = useState('');
+    const [bulkActionValue, setBulkActionValue] = useState('');
+    const { toast } = useToast();
 
     const [currentPage, setCurrentPage] = useState(1);
     const [rowsPerPage, setRowsPerPage] = useState(10);
@@ -123,9 +132,28 @@ export default function LeadsPage() {
         setCurrentPage(1); // Reset to first page on filter change
     }, [stageFilter, sectorFilter, entityFilter, contractTypeFilter, allLeads, stages, entities, user, hasRole]);
 
+    // Handle ESC key press to exit bulk edit mode
+    useEffect(() => {
+        const handleKeyDown = (event: KeyboardEvent) => {
+            if (event.key === 'Escape') {
+                setIsBulkEditMode(false);
+                setSelectedLeadIds([]);
+            }
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => {
+            window.removeEventListener('keydown', handleKeyDown);
+        };
+    }, []);
+
+
     const handleRowClick = (lead: Lead) => {
-        setSelectedLead(lead);
-        setIsEditDialogOpen(true);
+        if (isBulkEditMode) {
+            handleSelectLead(lead.id);
+        } else {
+            setSelectedLead(lead);
+            setIsEditDialogOpen(true);
+        }
     }
     
     const getStageName = (stageId?: string) => stages.find(s => s.id === stageId)?.name || 'N/A';
@@ -144,13 +172,136 @@ export default function LeadsPage() {
 
     const isSuper = hasRole(['Super User', 'Super Admin']);
 
+    const toggleBulkEditMode = () => {
+        setIsBulkEditMode(!isBulkEditMode);
+        setSelectedLeadIds([]);
+    }
+
+    const handleSelectLead = (leadId: string) => {
+        setSelectedLeadIds(prev =>
+            prev.includes(leadId) ? prev.filter(id => id !== leadId) : [...prev, leadId]
+        );
+    }
+
+    const handleSelectAll = () => {
+        if (selectedLeadIds.length === paginatedLeads.length) {
+            setSelectedLeadIds([]);
+        } else {
+            setSelectedLeadIds(paginatedLeads.map(lead => lead.id));
+        }
+    }
+    
+    const handleApplyBulkAction = async () => {
+        if (selectedLeadIds.length === 0 || !bulkActionType || !bulkActionValue) {
+            toast({
+                title: "Invalid Action",
+                description: "Please select leads, an action, and a value to apply.",
+                variant: "destructive"
+            });
+            return;
+        }
+
+        const batch = writeBatch(db);
+        const now = formatISO(new Date());
+
+        selectedLeadIds.forEach(leadId => {
+            const leadRef = doc(db, 'leads', leadId);
+            let updateData: { [key: string]: any } = { [bulkActionType]: bulkActionValue };
+            
+            if (bulkActionType === 'stageId') {
+                const leadToUpdate = allLeads.find(l => l.id === leadId);
+                if (leadToUpdate && leadToUpdate.stageId !== bulkActionValue) {
+                    const newHistoryEntry = { stageId: bulkActionValue, timestamp: now };
+                    updateData.stageHistory = [...(leadToUpdate.stageHistory || []), newHistoryEntry];
+                }
+            }
+            batch.update(leadRef, updateData);
+        });
+
+        try {
+            await batch.commit();
+
+            const actionName = `bulk_update_${bulkActionType}`;
+            await logAudit({
+                action: actionName,
+                to: { [bulkActionType]: bulkActionValue },
+                details: { leadIds: selectedLeadIds, count: selectedLeadIds.length },
+                user,
+            });
+
+            toast({
+                title: "Bulk Update Successful",
+                description: `${selectedLeadIds.length} leads have been updated.`
+            });
+            setIsBulkEditMode(false);
+            setSelectedLeadIds([]);
+        } catch (error) {
+            console.error("Error during bulk update: ", error);
+            toast({
+                title: "Error",
+                description: "An error occurred during the bulk update.",
+                variant: "destructive"
+            });
+        }
+    }
+    
+    const renderBulkActionInput = () => {
+        if (!bulkActionType) return null;
+
+        switch (bulkActionType) {
+            case 'stageId':
+                return (
+                    <Select onValueChange={setBulkActionValue} value={bulkActionValue}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select Stage" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {stages.filter(s => !s.isIsolated).map(stage => (
+                                <SelectItem key={stage.id} value={stage.id}>{stage.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                );
+            case 'ownerEntityId':
+                return (
+                    <Select onValueChange={setBulkActionValue} value={bulkActionValue}>
+                        <SelectTrigger className="w-[180px]">
+                            <SelectValue placeholder="Select Entity" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="global">Global (Unassigned)</SelectItem>
+                            {entities.map(entity => (
+                                <SelectItem key={entity.id} value={entity.id}>{entity.name}</SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                );
+            default:
+                return null;
+        }
+    };
+
+
     return (
         <div className="flex flex-col h-full">
             <PageHeader
                 title="Leads"
                 description="A simple list of all leads and their current stage."
             >
-                <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
+                <div className="flex items-center gap-2">
+                    {isBulkEditMode ? (
+                        <Button variant="outline" onClick={toggleBulkEditMode}>
+                            <X className="mr-2 h-4 w-4" />
+                            Cancel
+                        </Button>
+                    ) : (
+                        <Button variant="outline" onClick={toggleBulkEditMode}>
+                            <Edit className="mr-2 h-4 w-4" />
+                            Edit Leads
+                        </Button>
+                    )}
+                    <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
+                </div>
             </PageHeader>
 
             <div className="mb-4 flex flex-wrap items-end gap-4">
@@ -233,6 +384,15 @@ export default function LeadsPage() {
                         <Table>
                             <TableHeader className="sticky top-0 bg-card z-10">
                                 <TableRow>
+                                    <TableHead className="w-[50px]">
+                                        {isBulkEditMode && (
+                                            <Checkbox
+                                                checked={selectedLeadIds.length === paginatedLeads.length && paginatedLeads.length > 0}
+                                                onCheckedChange={handleSelectAll}
+                                                aria-label="Select all"
+                                            />
+                                        )}
+                                    </TableHead>
                                     <TableHead>Account Name</TableHead>
                                     <TableHead>Stage</TableHead>
                                     <TableHead>Sector</TableHead>
@@ -240,21 +400,57 @@ export default function LeadsPage() {
                                     <TableHead>Contract Type</TableHead>
                                     <TableHead>Contract Start</TableHead>
                                     <TableHead>Contract End</TableHead>
-                                    <TableHead className="text-right">
-                                        <ExportDialog 
-                                            leads={filteredLeads} 
-                                            getStageName={getStageName} 
-                                            getOwnerEntityName={getOwnerEntityName} 
-                                            stages={stages}
-                                            entities={entities}
-                                        />
+                                    <TableHead className="text-right w-[120px]">
+                                        {!isBulkEditMode && (
+                                            <ExportDialog 
+                                                leads={filteredLeads} 
+                                                getStageName={getStageName} 
+                                                getOwnerEntityName={getOwnerEntityName} 
+                                                stages={stages}
+                                                entities={entities}
+                                            />
+                                        )}
                                     </TableHead>
                                 </TableRow>
+                                {isBulkEditMode && (
+                                    <TableRow className="bg-muted/50 hover:bg-muted/50">
+                                        <TableCell colSpan={9} className="p-2">
+                                            <div className="flex items-center gap-2">
+                                                 <span className="text-sm font-medium pl-2">{selectedLeadIds.length} selected</span>
+                                                <Select onValueChange={setBulkActionType} value={bulkActionType}>
+                                                    <SelectTrigger className="w-[180px]">
+                                                        <SelectValue placeholder="Select Bulk Action" />
+                                                    </SelectTrigger>
+                                                    <SelectContent>
+                                                        <SelectItem value="stageId">Change Stage</SelectItem>
+                                                        <SelectItem value="ownerEntityId">Change Owner Entity</SelectItem>
+                                                    </SelectContent>
+                                                </Select>
+                                                {renderBulkActionInput()}
+                                                <Button onClick={handleApplyBulkAction} disabled={selectedLeadIds.length === 0 || !bulkActionType || !bulkActionValue}>Apply</Button>
+                                            </div>
+                                        </TableCell>
+                                    </TableRow>
+                                )}
                             </TableHeader>
                             <TableBody>
                                 {paginatedLeads.length > 0 ? (
                                     paginatedLeads.map((lead) => (
-                                        <TableRow key={lead.id} onClick={() => handleRowClick(lead)} className="cursor-pointer">
+                                        <TableRow 
+                                            key={lead.id} 
+                                            onClick={() => handleRowClick(lead)} 
+                                            className={isBulkEditMode ? 'cursor-pointer' : ''}
+                                            data-state={selectedLeadIds.includes(lead.id) ? "selected" : ""}
+                                        >
+                                            <TableCell>
+                                                {isBulkEditMode && (
+                                                    <Checkbox
+                                                        checked={selectedLeadIds.includes(lead.id)}
+                                                        onCheckedChange={() => handleSelectLead(lead.id)}
+                                                        aria-label="Select row"
+                                                    />
+                                                )}
+                                            </TableCell>
                                             <TableCell className="font-medium">{lead.accountName || 'N/A'}</TableCell>
                                             <TableCell>{getStageName(lead.stageId)}</TableCell>
                                             <TableCell>{lead.sector || 'N/A'}</TableCell>
@@ -263,17 +459,19 @@ export default function LeadsPage() {
                                             <TableCell>{isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), "PPP") : 'N_A'}</TableCell>
                                             <TableCell>{isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), "PPP") : 'N_A'}</TableCell>
                                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
-                                                <Button variant="outline" size="sm" asChild>
-                                                    <Link href={`/leads/${lead.id}`}>
-                                                        Open <ArrowRight className="ml-2 h-4 w-4"/>
-                                                    </Link>
-                                                </Button>
+                                                {!isBulkEditMode && (
+                                                    <Button variant="outline" size="sm" asChild>
+                                                        <Link href={`/leads/${lead.id}`}>
+                                                            Open <ArrowRight className="ml-2 h-4 w-4"/>
+                                                        </Link>
+                                                    </Button>
+                                                )}
                                             </TableCell>
                                         </TableRow>
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
+                                        <TableCell colSpan={9} className="h-24 text-center">
                                             No leads found.
                                         </TableCell>
                                     </TableRow>
@@ -339,3 +537,7 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    
+
+    
