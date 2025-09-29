@@ -43,6 +43,9 @@ const formatFieldName = (fieldName: string) => {
     if (fieldName === 'ownerEntityId') {
         return 'Owner Entity';
     }
+    if (fieldName === 'stageId') {
+        return 'Stage';
+    }
     const words = fieldName.replace(/([A-Z])/g, ' $1');
     return words.charAt(0).toUpperCase() + words.slice(1);
 };
