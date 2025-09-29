@@ -401,7 +401,7 @@ export default function LeadsPage() {
                                                 entities={entities}
                                             />
                                         ) : (
-                                            <div className="flex items-center justify-end">
+                                            <div className="flex items-center justify-end pr-4">
                                                  <Checkbox
                                                     checked={selectedLeadIds.length === paginatedLeads.length && paginatedLeads.length > 0}
                                                     onCheckedChange={handleSelectAll}
@@ -533,6 +533,8 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    
 
     
 
