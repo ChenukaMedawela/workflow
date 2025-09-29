@@ -64,7 +64,7 @@ export default function LeadsPage() {
             
             const stagesData = stagesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Stage).sort((a,b) => a.order - b.order);
             setStages(stagesData);
-            const entitiesData = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id }) as Entity);
+            const entitiesData = entitiesSnapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity));
             setEntities(entitiesData);
             const rulesData = rulesSnapshot.docs.map(doc => ({ ...doc.data(), stageId: doc.id }) as AutomationRule);
             setAutomationRules(rulesData);
@@ -450,11 +450,13 @@ export default function LeadsPage() {
                                             <TableCell>{isValidDate(lead.contractEndDate) ? format(new Date(lead.contractEndDate), "PPP") : 'N_A'}</TableCell>
                                             <TableCell className="text-right" onClick={(e) => e.stopPropagation()}>
                                                 {isBulkEditMode ? (
-                                                     <Checkbox
-                                                        checked={selectedLeadIds.includes(lead.id)}
-                                                        onCheckedChange={() => handleSelectLead(lead.id)}
-                                                        aria-label="Select row"
-                                                    />
+                                                    <div className="flex justify-end pr-4">
+                                                        <Checkbox
+                                                            checked={selectedLeadIds.includes(lead.id)}
+                                                            onCheckedChange={() => handleSelectLead(lead.id)}
+                                                            aria-label="Select row"
+                                                        />
+                                                    </div>
                                                 ) : (
                                                     <Button variant="outline" size="sm" asChild>
                                                         <Link href={`/leads/${lead.id}`}>
@@ -533,6 +535,8 @@ export default function LeadsPage() {
         </div>
     );
 }
+
+    
 
     
 
