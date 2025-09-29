@@ -150,19 +150,10 @@ export default function LeadsPage() {
                 title="Leads"
                 description="A simple list of all leads and their current stage."
             >
-                <div className="flex items-center gap-2">
-                    <ExportDialog 
-                        leads={filteredLeads} 
-                        getStageName={getStageName} 
-                        getOwnerEntityName={getOwnerEntityName} 
-                        stages={stages}
-                        entities={entities}
-                    />
-                    <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
-                </div>
+                <AddLeadDialog sectors={sectors} onSectorAdded={(newSector) => setSectors(prev => [...prev, newSector])} />
             </PageHeader>
 
-            <div className="mb-4 flex items-center gap-4">
+            <div className="mb-4 flex flex-wrap items-end gap-4">
                 <div className="w-64">
                     <Label htmlFor="stage-filter">Filter by Stage</Label>
                     <Select value={stageFilter} onValueChange={setStageFilter}>
@@ -228,6 +219,14 @@ export default function LeadsPage() {
                         </SelectContent>
                     </Select>
                 </div>
+                <div className="flex-grow" />
+                <ExportDialog 
+                    leads={filteredLeads} 
+                    getStageName={getStageName} 
+                    getOwnerEntityName={getOwnerEntityName} 
+                    stages={stages}
+                    entities={entities}
+                />
             </div>
 
 
