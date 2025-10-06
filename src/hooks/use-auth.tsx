@@ -86,7 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
       if (userDoc.exists()) {
         const userData = userDoc.data() as User;
-        await logAudit({ action: 'login', user: userData, timestamp: new Date() });
+        await logAudit({ action: 'login', user: userData });
         setSessionCookie(firebaseUser.uid);
         setUser(userData)
       }
@@ -111,7 +111,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             name: name,
             email: email,
             avatarUrl: `https://i.pravatar.cc/150?u=${firebaseUser.uid}`,
-            role: role,
+            role: 'pending' as UserRole,
+            status: 'pending',
             ...(entityId && entityId !== 'global' && { entityId: entityId }),
         };
 
@@ -140,7 +141,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const logout = async () => {
     if (user) {
-        await logAudit({ action: 'logout', user, timestamp: new Date() });
+        await logAudit({ action: 'logout', user });
     }
     await signOut(auth);
     router.push('/login');
@@ -148,6 +149,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const hasRole = (roles: UserRole[]) => {
     if (!user) return false;
+    // Also check for status if it exists
+    if ('status' in user && user.status !== 'approved') return false;
     return roles.includes(user.role);
   };
 

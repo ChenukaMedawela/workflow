@@ -1,13 +1,13 @@
 
 'use client';
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { MoreVertical, GripVertical, Trash2, Edit, Lock } from "lucide-react";
+import { MoreVertical, GripVertical, Trash2, Edit, Lock, ChevronDown } from "lucide-react";
 import { Stage } from '@/lib/types';
 import { EditStageDialog } from './edit-stage-dialog';
 import { DeleteStageDialog } from './delete-stage-dialog';
@@ -18,6 +18,7 @@ import { DraggableProvidedDragHandleProps } from '@hello-pangea/dnd';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { logAudit } from '@/lib/audit-log';
 import { useAuth } from '@/hooks/use-auth';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 
 interface StageCardProps {
@@ -30,6 +31,7 @@ interface StageCardProps {
 export function StageCard({ stage, onStageUpdated, onStageDeleted, dragHandleProps }: StageCardProps) {
     const { toast } = useToast();
     const { user } = useAuth();
+    const [isOpen, setIsOpen] = useState(false);
 
     const handleToggle = async (field: keyof Stage | `rules.${keyof Stage['rules']}`, value: boolean) => {
         const stageRef = doc(db, "pipelineStages", stage.id);
@@ -107,58 +109,74 @@ export function StageCard({ stage, onStageUpdated, onStageDeleted, dragHandlePro
     }
 
     return (
-        <Card>
-            <CardContent className="p-4 flex items-center justify-between gap-4">
-                <div className="flex items-center gap-4 flex-1">
-                     <div {...dragHandleProps} className="flex flex-col items-center gap-2 text-muted-foreground cursor-grab px-2">
-                        <GripVertical className="h-5 w-5" />
+        <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+            <Card>
+                <div className="p-4 flex items-center justify-between gap-4">
+                    <div className="flex items-center gap-4 flex-1">
+                        <div {...dragHandleProps} className="flex flex-col items-center gap-2 text-muted-foreground cursor-grab px-2">
+                            <GripVertical className="h-5 w-5" />
+                        </div>
+                        <div className="font-semibold text-lg">{stage.name}</div>
                     </div>
-                    <div className="font-semibold text-lg">{stage.name}</div>
+                    <div className="flex items-center gap-2">
+                        <CollapsibleTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <ChevronDown className={`h-5 w-5 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+                                <span className="sr-only">Toggle details</span>
+                            </Button>
+                        </CollapsibleTrigger>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreVertical className="h-5 w-5" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem asChild>
+                                <EditStageDialog stage={stage} onStageUpdated={onStageUpdated}>
+                                    <div className="flex items-center cursor-pointer w-full">
+                                        <Edit className="mr-2 h-4 w-4"/>
+                                        <span>Edit</span>
+                                    </div>
+
+                                </EditStageDialog>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem asChild>
+                                <DeleteStageDialog stageId={stage.id} stageName={stage.name} onStageDeleted={onStageDeleted}>
+                                    <div className="flex items-center cursor-pointer w-full text-destructive">
+                                        <Trash2 className="mr-2 h-4 w-4"/>
+                                        <span>Delete</span>
+                                    </div>
+                                </DeleteStageDialog>
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
                 </div>
 
-                <div className="flex items-center gap-6">
-                    <div className="flex items-center space-x-2">
-                        <Switch id={`isolated-${stage.id}`} checked={stage.isIsolated} onCheckedChange={(val) => handleToggle('isIsolated', val)} />
-                        <Label htmlFor={`isolated-${stage.id}`}>Isolated</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Switch id={`start-date-${stage.id}`} checked={stage.rules.requireStartDateToEnter} onCheckedChange={(val) => handleToggle('rules.requireStartDateToEnter', val)} />
-                        <Label htmlFor={`start-date-${stage.id}`}>Requires Contract Start Date</Label>
-                    </div>
-                    <div className="flex items-center space-x-2">
-                        <Switch id={`end-date-${stage.id}`} checked={stage.rules.requireEndDateToLeave} onCheckedChange={(val) => handleToggle('rules.requireEndDateToLeave', val)} />
-                        <Label htmlFor={`end-date-${stage.id}`}>Requires Contract End Date</Label>
-                    </div>
-                </div>
-
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon">
-                            <MoreVertical className="h-5 w-5" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem asChild>
-                           <EditStageDialog stage={stage} onStageUpdated={onStageUpdated}>
-                                <div className="flex items-center cursor-pointer w-full">
-                                    <Edit className="mr-2 h-4 w-4"/>
-                                    <span>Edit</span>
+                <CollapsibleContent>
+                    <div className="border-t">
+                        <CardContent className="p-4 pt-4">
+                            <div className="flex items-center gap-6">
+                                <div className="flex items-center space-x-2">
+                                    <Switch id={`isolated-${stage.id}`} checked={stage.isIsolated} onCheckedChange={(val) => handleToggle('isIsolated', val)} />
+                                    <Label htmlFor={`isolated-${stage.id}`}>Isolated</Label>
                                 </div>
-                           </EditStageDialog>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem asChild>
-                           <DeleteStageDialog stageId={stage.id} stageName={stage.name} onStageDeleted={onStageDeleted}>
-                               <div className="flex items-center cursor-pointer w-full text-destructive">
-                                <Trash2 className="mr-2 h-4 w-4"/>
-                                <span>Delete</span>
-                               </div>
-                           </DeleteStageDialog>
-                        </DropdownMenuItem>
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </CardContent>
-        </Card>
+                                <div className="flex items-center space-x-2">
+                                    <Switch id={`start-date-${stage.id}`} checked={stage.rules.requireStartDateToEnter} onCheckedChange={(val) => handleToggle('rules.requireStartDateToEnter', val)} />
+                                    <Label htmlFor={`start-date-${stage.id}`}>Requires Contract Start Date</Label>
+                                </div>
+                                <div className="flex items-center space-x-2">
+                                    <Switch id={`end-date-${stage.id}`} checked={stage.rules.requireEndDateToLeave} onCheckedChange={(val) => handleToggle('rules.requireEndDateToLeave', val)} />
+                                    <Label htmlFor={`end-date-${stage.id}`}>Requires Contract End Date</Label>
+                                </div>
+                            </div>
+                        </CardContent>
+                    </div>
+                </CollapsibleContent>
+            </Card>
+        </Collapsible>
     );
 }

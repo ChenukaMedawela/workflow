@@ -20,7 +20,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         <div>
             <PageHeader
                 title="Admin Panel"
-                description="Manage users, entities, pipeline, and system settings."
+                description="Manage entities, pipeline, and system settings."
             />
             <AdminTabs />
             <div className="admin-tabs-content-panel">

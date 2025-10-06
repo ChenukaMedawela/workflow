@@ -49,6 +49,8 @@ import {
             if (doc.exists()) {
                 setLogoUrl(doc.data().logoUrl || null);
             }
+        }, (error) => {
+            console.error("Error fetching theme settings:", error);
         });
         return () => unsubscribe();
     }, []);
@@ -120,10 +122,24 @@ import {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  isActive={pathname.startsWith('/users')}
+                  tooltip="User Management"
+                >
+                  <Link href="/users">
+                    <Users />
+                    <span>User Management</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            )}
+            {isAdminVisible && (
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
                   isActive={pathname.startsWith('/admin')}
                   tooltip="Admin"
                 >
-                  <Link href="/admin/users">
+                  <Link href="/admin/entities">
                     <Settings />
                     <span>Admin</span>
                   </Link>
@@ -133,7 +149,7 @@ import {
           </SidebarMenu>
         </SidebarContent>
         <SidebarFooter className="hidden md:flex p-2 items-center gap-2">
-            
+          <UserNav />
         </SidebarFooter>
       </Sidebar>
     );

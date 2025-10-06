@@ -23,7 +23,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Entity, UserRole } from "@/lib/types";
+import { Entity } from "@/lib/types";
 import { collection, doc, getDoc, getDocs } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Image from 'next/image';
@@ -39,7 +39,9 @@ const signupSchema = z.object({
   path: ["confirmPassword"],
 });
 
-export default function SignupPage() {
+type SignupFormValues = z.infer<typeof signupSchema>;
+
+const SignupPage = () => {
   const [isLoading, setIsLoading] = React.useState(false);
   const [showPassword, setShowPassword] = React.useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = React.useState(false);
@@ -50,7 +52,7 @@ export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof signupSchema>>({
+  const form = useForm<SignupFormValues>({
     resolver: zodResolver(signupSchema),
     defaultValues: {
       name: "",
@@ -66,7 +68,7 @@ export default function SignupPage() {
       const entitiesCollection = collection(db, 'entities');
       const entitiesSnapshot = await getDocs(entitiesCollection);
       setEntities(entitiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Entity)));
-    }
+    };
     fetchEntities();
 
     const fetchLogo = async () => {
@@ -79,17 +81,15 @@ export default function SignupPage() {
     fetchLogo();
   }, []);
 
-  const handleSignup = async (values: z.infer<typeof signupSchema>) => {
+  const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
     try {
-      // If no entity is selected, the user gets the 'Viewer' role.
-      const role: UserRole = values.entityId ? 'Viewer' : 'Viewer'; // Default to Viewer for now
-      await signup(values.email, values.password, values.name, values.entityId, role);
+      await signup(values.email, values.password, values.name, values.entityId);
       toast({
         title: "Signup Successful",
-        description: "Welcome! Your account has been created.",
+        description: "Your account has been created and is awaiting approval.",
       });
-      router.push("/dashboard");
+      router.push("/pending-approval");
     } catch (error: any) {
       let description = "An unexpected error occurred.";
       if (error.code === 'auth/email-already-in-use') {
@@ -257,4 +257,6 @@ export default function SignupPage() {
       </Form>
     </Card>
   );
-}
+};
+
+export default SignupPage;

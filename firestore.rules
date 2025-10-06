@@ -1,42 +1,48 @@
+
 rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
 
-    function getRole() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role;
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function getUserRole() {
+      return getUserData().role;
     }
 
     function getUserEntityId() {
-      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.entityId;
+        return getUserData().entityId;
     }
 
     function isSuperRole() {
-      return request.auth != null && getRole() in ['Super User', 'Super Admin'];
+      return getUserRole() in ['Super User', 'Super Admin'];
     }
 
     function isAdmin() {
-      return request.auth != null && getRole() in ['Admin', 'Super User', 'Super Admin'];
-    }
-
-    function isAuthenticated() {
-      return request.auth != null;
+        return getUserRole() in ['Super User', 'Super Admin', 'Admin'];
     }
 
     match /users/{userId} {
       // Allow a user to read profiles of other users in the same entity.
       allow read: if isAuthenticated() && (
-        request.auth.uid == userId || 
-        isAdmin() || 
+        request.auth.uid == userId ||
+        isSuperRole() ||
+        isAdmin() ||
         resource.data.entityId == getUserEntityId()
       );
-      allow create: if isAdmin();
+      allow create: if isAdmin() || request.auth.uid == userId;
       allow update: if isAuthenticated() && (request.auth.uid == userId || isAdmin());
       allow delete: if isAdmin();
     }
 
     match /entities/{entityId} {
-      allow read, write: if isSuperRole();
+      allow read;
+      allow write: if isSuperRole();
     }
 
     match /leads/{leadId} {
@@ -45,7 +51,8 @@ service cloud.firestore {
     }
 
     match /pipelineStages/{stageId} {
-      allow read, write: if isSuperRole();
+      allow read: if isAdmin();
+      allow write: if isSuperRole();
     }
 
     match /automationRules/{ruleId} {
@@ -53,15 +60,13 @@ service cloud.firestore {
     }
 
     match /auditLogs/{logId} {
-      // Admins can read all logs, other users can only read logs for their own entity.
-      allow read: if isAdmin() || (isAuthenticated() && resource.data.entityId == getUserEntityId());
-      // Writes should only come from a trusted server environment, not clients.
-      allow create, update, delete: if false;
+      allow read: if isAdmin();
+      allow create: if isAuthenticated();
     }
 
-    match /settings/{docId} {
-      allow read: if isAuthenticated();
-      allow write: if isSuperRole();
+    match /settings/{settingId} {
+        allow read; // Allow public read access for theme settings
+        allow write: if isSuperRole();
     }
   }
 }

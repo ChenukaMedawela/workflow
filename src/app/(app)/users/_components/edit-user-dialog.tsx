@@ -99,22 +99,36 @@ export function EditUserDialog({ user, entities, onUserUpdated, open, onOpenChan
             entityId: null
         };
 
-        if (entityShouldBeRemoved) {
-            updatedDataForFirestore.entityId = deleteField();
+        if (hasRole(['Super User', 'Super Admin'])) {
+            if (entityShouldBeRemoved) {
+                updatedDataForFirestore.entityId = deleteField();
+            } else {
+                updatedDataForFirestore.entityId = values.entityId;
+                updatedDataForLog.entityId = values.entityId;
+            }
         } else {
-            updatedDataForFirestore.entityId = values.entityId;
-            updatedDataForLog.entityId = values.entityId;
+            // If the user is an admin, they cannot change the entity.
+            // The entityId from the form is not used, and the existing one is preserved.
+            updatedDataForFirestore.entityId = user.entityId;
+            updatedDataForLog.entityId = user.entityId;
         }
 
         await updateDoc(userRef, updatedDataForFirestore);
+
+        const serializableUser = currentUser ? {
+            id: currentUser.id,
+            name: currentUser.name,
+            entityId: currentUser.entityId,
+            email: currentUser.email,
+            role: currentUser.role,
+        } : null;
 
         await logAudit({
             action: 'update_user',
             from: originalData,
             to: updatedDataForLog,
             details: { userId: user.id, userEmail: user.email },
-            user: currentUser,
-            timestamp: new Date(),
+            user: serializableUser,
         });
 
       toast({
@@ -145,10 +159,9 @@ export function EditUserDialog({ user, entities, onUserUpdated, open, onOpenChan
     }
   };
 
-  const isEntityHidden = watchRole === 'Super Admin' || watchRole === 'Super User';
+  const isEntityHiddenForRole = !hasRole(['Super User', 'Super Admin']);
+  const isEntityHiddenForSelectedRole = watchRole === 'Super Admin' || watchRole === 'Super User';
   const assignableRoles = getAssignableRoles();
-  const isEditingSelfAsSuperUser = currentUser?.id === user.id && currentUser?.role === 'Super User';
-
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -194,7 +207,7 @@ export function EditUserDialog({ user, entities, onUserUpdated, open, onOpenChan
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Role</FormLabel>
-                   <Select onValueChange={field.onChange} value={field.value} disabled={isEditingSelfAsSuperUser}>
+                   <Select onValueChange={field.onChange} value={field.value}>
                      <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Select a role" />
@@ -210,7 +223,7 @@ export function EditUserDialog({ user, entities, onUserUpdated, open, onOpenChan
                 </FormItem>
               )}
             />
-            {!isEntityHidden && (
+            {!isEntityHiddenForRole && !isEntityHiddenForSelectedRole && (
                 <FormField
                 control={form.control}
                 name="entityId"
