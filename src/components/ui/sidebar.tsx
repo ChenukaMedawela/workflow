@@ -157,7 +157,7 @@ const SidebarToggle = () => {
             <Button
                 variant="ghost"
                 size="icon"
-                className="size-8 rounded-full bg-background hover:bg-background border shadow-md"
+                className="size-8 rounded-full bg-background hover:bg-background border shadow-md text-muted-foreground dark:text-foreground"
                 onClick={toggleSidebar}
             >
                 {state === 'expanded' ? <ChevronLeft /> : <ChevronRight />}
@@ -565,7 +565,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
           {activeItem && (
              <div
                 className={cn(
-                  "absolute left-0 z-0 w-full rounded-md border-2 border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
+                  "absolute left-0 z-0 w-full rounded-md border border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
                   "group-data-[collapsible=icon]:hidden"
                 )}
                 style={{
