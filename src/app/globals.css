@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -36,17 +35,16 @@
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
     
-    --sidebar-custom-bg: 1 0% 13%;
+    --sidebar-custom-bg: 240 5% 13%;
     
     --sidebar-background: var(--sidebar-custom-bg);
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: hsl(var(--primary));
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
-    --sidebar-accent: hsl(var(--accent));
-    --sidebar-accent-foreground: hsl(var(--accent-foreground));
+    --sidebar-accent: hsl(var(--primary) / 0.2);
+    --sidebar-accent-foreground: hsl(var(--primary-foreground));
     --sidebar-border: 217 11% 45%;
     --sidebar-ring: hsl(var(--ring));
-    --radius: 0.5rem;
   }
   .dark {
     --background: 240 10% 15%;
