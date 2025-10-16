@@ -2,7 +2,7 @@
 "use server";
 
 import { User, UserRole } from "@/lib/types";
-import { getFirebaseAdmin } from "../firebase-admin";
+import { auth, db } from "../firebase-admin";
 import { cookies } from "next/headers";
 import { doc, getDoc } from "firebase/firestore";
 
@@ -14,16 +14,14 @@ import { doc, getDoc } from "firebase/firestore";
  */
 export async function getAuthenticatedUser(): Promise<{ user: User | null }> {
     try {
-        const { auth, db } = getFirebaseAdmin();
         const session = cookies().get("__session")?.value;
 
         if (!session) {
             return { user: null };
         }
-
-        // In a real app, you would use auth.verifySessionCookie(session, true)
-        // For this example, we are using the session as the user ID for simplicity.
-        const userId = session;
+        
+        const decodedIdToken = await auth.verifySessionCookie(session, true);
+        const userId = decodedIdToken.uid;
 
         if (!userId) {
             return { user: null };

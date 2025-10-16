@@ -498,98 +498,85 @@ const SidebarGroupContent = React.forwardRef<
 ))
 SidebarGroupContent.displayName = "SidebarGroupContent"
 
-type ActiveItem = {
-  top: number;
-  height: number;
-};
+const SidebarMenu = React.forwardRef<
+  HTMLUListElement,
+  React.ComponentProps<"ul">
+>(({ className, children, ...props }, ref) => {
+  const menuRef = React.useRef<HTMLUListElement>(null);
+  const [activeItemStyle, setActiveItemStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
+  const firstRender = React.useRef(true);
+  const [isClient, setIsClient] = React.useState(false);
 
-const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(
-  ({ className, children, ...props }, ref) => {
-    const menuRef = React.useRef<HTMLUListElement>(null);
-    const [activeItem, setActiveItem] = React.useState<ActiveItem | null>(null);
-    const itemRefs = React.useRef<Map<string, HTMLLIElement>>(new Map());
+  React.useEffect(() => {
+    setIsClient(true);
+  }, []);
 
-    React.useEffect(() => {
-      const currentMenuRef = menuRef.current;
-      if (!currentMenuRef) return;
-    
-      const updateActiveItem = () => {
-        let foundActive = false;
-        for (const [key, itemEl] of itemRefs.current.entries()) {
-          const button = itemEl.querySelector('[data-sidebar="menu-button"][data-active="true"]');
-          if (button && currentMenuRef) {
-            const { top: menuTop } = currentMenuRef.getBoundingClientRect();
-            const { top: itemTop, height } = itemEl.getBoundingClientRect();
-            setActiveItem({ top: itemTop - menuTop, height });
-            foundActive = true;
-            break; 
-          }
-        }
-        if (!foundActive) {
-          setActiveItem(null); 
-        }
-      };
-    
-      updateActiveItem();
-    
-      // Use MutationObserver to detect changes in the DOM, including `data-active`
-      const observer = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-          if (mutation.type === 'attributes' && mutation.attributeName === 'data-active') {
-            updateActiveItem();
-            break;
-          }
+  React.useEffect(() => {
+    if (!isClient) return;
+
+    const menu = menuRef.current;
+    if (!menu) return;
+
+    const updateActiveItem = () => {
+      requestAnimationFrame(() => {
+        const activeButton = menu.querySelector('[data-sidebar="menu-button"][data-active="true"]') as HTMLElement | null;
+        if (activeButton) {
+          const top = activeButton.offsetTop;
+          const height = activeButton.offsetHeight;
+          setActiveItemStyle({ top, height, opacity: 1 });
+        } else {
+          setActiveItemStyle({ top: 0, height: 0, opacity: 0 });
         }
       });
-    
-      itemRefs.current.forEach(itemEl => {
-        const button = itemEl.querySelector('[data-sidebar="menu-button"]');
-        if (button) {
-          observer.observe(button, { attributes: true });
+    };
+
+    updateActiveItem();
+
+    const observer = new MutationObserver((mutations) => {
+      for (const mutation of mutations) {
+        if (mutation.type === 'attributes' && (mutation.attributeName === 'data-active' || mutation.attributeName === 'class')) {
+          updateActiveItem();
+          break;
         }
-      });
-    
-      return () => {
-        observer.disconnect();
-      };
-    }, [children]);
+      }
+    });
 
+    observer.observe(menu, { attributes: true, childList: true, subtree: true });
+    window.addEventListener('resize', updateActiveItem);
 
-    return (
-        <ul
-          ref={menuRef}
-          data-sidebar="menu"
-          className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
-          {...props}
-        >
-          {activeItem && (
-             <div
-                className={cn(
-                  "absolute left-0 z-0 w-full rounded-md border border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
-                  "group-data-[collapsible=icon]:hidden"
-                )}
-                style={{
-                  transform: `translateY(${activeItem.top}px)`,
-                  height: `${activeItem.height}px`,
-                }}
-              />
+    firstRender.current = false;
+
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', updateActiveItem);
+    };
+  }, [children, isClient]);
+
+  return (
+    <ul
+      ref={menuRef}
+      data-sidebar="menu"
+      className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
+      {...props}
+    >
+      {isClient && (
+        <div
+          className={cn(
+            'absolute left-0 z-0 w-full rounded-md border bg-sidebar-accent transition-transform duration-300 ease-spring',
+            firstRender.current ? 'duration-0' : ''
           )}
-          {React.Children.map(children, (child) => {
-            if (React.isValidElement(child)) {
-                const key = child.key ?? React.useId();
-                return React.cloneElement(child as React.ReactElement, {
-                    ref: (el: HTMLLIElement) => {
-                        if (el) itemRefs.current.set(key, el);
-                        else itemRefs.current.delete(key);
-                    },
-                });
-            }
-            return child;
-           })}
-        </ul>
-    )
-  }
-)
+          style={{
+            transform: `translateY(${activeItemStyle.top}px)`,
+            height: `${activeItemStyle.height}px`,
+            opacity: activeItemStyle.opacity,
+            borderWidth: '2px'
+          }}
+        />
+      )}
+      {children}
+    </ul>
+  );
+});
 SidebarMenu.displayName = "SidebarMenu"
 
 const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>(
@@ -612,8 +599,8 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-transparent text-sidebar-foreground data-[active=true]:text-sidebar-primary-foreground",
-        ghost: "bg-transparent text-sidebar-primary-foreground",
+          "bg-transparent text-sidebar-foreground",
+        ghost: "bg-transparent text-sidebar-foreground data-[active=true]:bg-transparent data-[active=true]:text-sidebar-primary-foreground",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
@@ -653,7 +640,7 @@ const SidebarMenuButton = React.forwardRef<
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
     
-    const variant = variantProp;
+    const variant = isActive ? 'ghost' : variantProp;
 
     const button = (
       <Comp

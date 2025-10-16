@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getFirebaseAdmin } from './firebase-admin';
+import { db } from './firebase-admin';
 import { User } from './types';
 
 type AuditLogInput = {
@@ -52,7 +52,6 @@ const getChangedFields = (from: Record<string, any> | undefined, to: Record<stri
 
 export async function logAudit(log: AuditLogInput) {
     try {
-        const { db } = getFirebaseAdmin();
         const { user, action, details, timestamp } = log;
 
         let fromPayload = log.from;

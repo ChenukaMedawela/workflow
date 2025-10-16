@@ -18,6 +18,7 @@ interface AuthContextType {
   signup: (email: string, password: string, name: string, entityId?: string, role?: UserRole) => Promise<User>;
   loading: boolean;
   hasRole: (roles: UserRole[]) => boolean;
+  cleanup: () => void; // Add cleanup function
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -36,8 +37,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const router = useRouter();
 
+  let unsubscribe: () => void;
+
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         try {
             const userDoc = await getDoc(doc(db, "users", firebaseUser.uid));
@@ -75,7 +78,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
     });
 
-    return () => unsubscribe();
+    return () => {
+      if (unsubscribe) {
+        unsubscribe();
+      }
+    };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -153,8 +160,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if ('status' in user && user.status !== 'approved') return false;
     return roles.includes(user.role);
   };
+  
+  const cleanup = () => {
+    if (unsubscribe) {
+      unsubscribe();
+    }
+  };
 
-  const value = { user, login, logout, signup, loading, hasRole };
+  const value = { user, login, logout, signup, loading, hasRole, cleanup };
 
   return (
     <AuthContext.Provider value={value}>

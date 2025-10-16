@@ -2,9 +2,7 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { getFirebaseAdmin } from '@/lib/firebase-admin';
-
-const { db, auth } = getFirebaseAdmin();
+import { db, auth } from '@/lib/firebase-admin';
 
 export async function approveUser(userId: string) {
   const userRef = db.collection('users').doc(userId);
