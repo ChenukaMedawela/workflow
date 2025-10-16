@@ -501,82 +501,16 @@ SidebarGroupContent.displayName = "SidebarGroupContent"
 const SidebarMenu = React.forwardRef<
   HTMLUListElement,
   React.ComponentProps<"ul">
->(({ className, children, ...props }, ref) => {
-  const menuRef = React.useRef<HTMLUListElement>(null);
-  const [activeItemStyle, setActiveItemStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
-  const firstRender = React.useRef(true);
-  const [isClient, setIsClient] = React.useState(false);
-
-  React.useEffect(() => {
-    setIsClient(true);
-  }, []);
-
-  React.useEffect(() => {
-    if (!isClient) return;
-
-    const menu = menuRef.current;
-    if (!menu) return;
-
-    const updateActiveItem = () => {
-      requestAnimationFrame(() => {
-        const activeButton = menu.querySelector('[data-sidebar="menu-button"][data-active="true"]') as HTMLElement | null;
-        if (activeButton) {
-          const top = activeButton.offsetTop;
-          const height = activeButton.offsetHeight;
-          setActiveItemStyle({ top, height, opacity: 1 });
-        } else {
-          setActiveItemStyle({ top: 0, height: 0, opacity: 0 });
-        }
-      });
-    };
-
-    updateActiveItem();
-
-    const observer = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        if (mutation.type === 'attributes' && (mutation.attributeName === 'data-active' || mutation.attributeName === 'class')) {
-          updateActiveItem();
-          break;
-        }
-      }
-    });
-
-    observer.observe(menu, { attributes: true, childList: true, subtree: true });
-    window.addEventListener('resize', updateActiveItem);
-
-    firstRender.current = false;
-
-    return () => {
-      observer.disconnect();
-      window.removeEventListener('resize', updateActiveItem);
-    };
-  }, [children, isClient]);
-
+>(({ className, ...props }, ref) => {
   return (
     <ul
-      ref={menuRef}
+      ref={ref}
       data-sidebar="menu"
       className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
       {...props}
-    >
-      {isClient && (
-        <div
-          className={cn(
-            'absolute left-0 z-0 w-full rounded-md border bg-sidebar-accent transition-transform duration-300 ease-spring',
-            firstRender.current ? 'duration-0' : ''
-          )}
-          style={{
-            transform: `translateY(${activeItemStyle.top}px)`,
-            height: `${activeItemStyle.height}px`,
-            opacity: activeItemStyle.opacity,
-            borderWidth: '2px'
-          }}
-        />
-      )}
-      {children}
-    </ul>
-  );
-});
+    />
+  )
+})
 SidebarMenu.displayName = "SidebarMenu"
 
 const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>(
@@ -599,8 +533,8 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-transparent text-sidebar-foreground",
-        ghost: "bg-transparent text-sidebar-foreground data-[active=true]:bg-transparent data-[active=true]:text-sidebar-primary-foreground",
+          "bg-transparent text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
+        ghost: "bg-transparent text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
@@ -629,7 +563,7 @@ const SidebarMenuButton = React.forwardRef<
     {
       asChild = false,
       isActive = false,
-      variant: variantProp,
+      variant,
       size = "default",
       tooltip,
       className,
@@ -639,8 +573,6 @@ const SidebarMenuButton = React.forwardRef<
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
-    
-    const variant = isActive ? 'ghost' : variantProp;
 
     const button = (
       <Comp
@@ -692,7 +624,7 @@ const SidebarMenuAction = React.forwardRef<
       ref={ref}
       data-sidebar="menu-action"
       className={cn(
-        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 peer-hover/menu-button:text-sidebar-accent-foreground [&>svg]:size-4 [&>svg]:shrink-0",
+        "absolute right-1 top-1.5 flex aspect-square w-5 items-center justify-center rounded-md p-0 text-sidebar-foreground outline-none ring-sidebar-ring transition-transform hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 [&>svg]:size-4 [&>svg]:shrink-0",
         // Increases the hit area of the button on mobile.
         "after:absolute after:-inset-2 after:md:hidden",
         "peer-data-[size=sm]/menu-button:top-1",
