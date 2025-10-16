@@ -108,6 +108,7 @@ import {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
+                  variant="ghost"
                   isActive={pathname.startsWith(item.href)}
                   tooltip={item.label}
                 >
@@ -122,6 +123,7 @@ import {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  variant="ghost"
                   isActive={pathname.startsWith('/users')}
                   tooltip="User Management"
                 >
@@ -136,10 +138,11 @@ import {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
+                  variant="ghost"
                   isActive={pathname.startsWith('/admin')}
                   tooltip="Admin"
                 >
-                  <Link href="/admin/entities">
+                  <Link href="/admin">
                     <Settings />
                     <span>Admin</span>
                   </Link>

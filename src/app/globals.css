@@ -34,13 +34,15 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
     
     --sidebar-custom-bg: 240 10% 15%;
     
     --sidebar-background: var(--sidebar-custom-bg);
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary: transparent;
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-primary-border: hsl(var(--primary));
     --sidebar-accent: hsl(var(--primary) / 0.2);
     --sidebar-accent-foreground: hsl(var(--primary-foreground));
     --sidebar-border: 217 11% 45%;
@@ -77,11 +79,13 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
+    --radius: 0.5rem;
     
     --sidebar-background: var(--sidebar-custom-bg);
     --sidebar-foreground: 0 0% 98%;
-    --sidebar-primary: hsl(var(--primary));
+    --sidebar-primary: transparent;
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
+    --sidebar-primary-border: hsl(var(--primary));
     --sidebar-accent: hsl(var(--primary) / 0.2);
     --sidebar-accent-foreground: hsl(var(--primary-foreground));
     --sidebar-border: 217 11% 45%;
