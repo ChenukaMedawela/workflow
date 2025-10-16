@@ -21,7 +21,6 @@ import {
 } from "@/components/ui/tooltip"
 
 const SIDEBAR_COOKIE_NAME = "sidebar_state"
-const SIDEBAR_LOCK_COOKIE_NAME = "sidebar_lock_state"
 const SIDEBAR_COOKIE_MAX_AGE = 60 * 60 * 24 * 7
 const SIDEBAR_WIDTH = "16rem"
 const SIDEBAR_WIDTH_MOBILE = "18rem"
@@ -32,8 +31,6 @@ type SidebarContext = {
   state: "expanded" | "collapsed"
   open: boolean
   setOpen: (open: boolean) => void
-  isLocked: boolean
-  setIsLocked: (locked: boolean) => void
   openMobile: boolean
   setOpenMobile: (open: boolean) => void
   isMobile: boolean
@@ -57,9 +54,6 @@ const SidebarProvider = React.forwardRef<
     defaultOpen?: boolean
     open?: boolean
     onOpenChange?: (open: boolean) => void
-    defaultLocked?: boolean
-    locked?: boolean
-    onLockChange?: (locked: boolean) => void
   }
 >(
   (
@@ -67,9 +61,6 @@ const SidebarProvider = React.forwardRef<
       defaultOpen = true,
       open: openProp,
       onOpenChange: setOpenProp,
-      defaultLocked = false,
-      locked: lockedProp,
-      onLockChange: setLockedProp,
       className,
       style,
       children,
@@ -80,10 +71,8 @@ const SidebarProvider = React.forwardRef<
     const isMobile = useIsMobile()
     const [openMobile, setOpenMobile] = React.useState(false)
     const [_open, _setOpen] = React.useState(defaultOpen)
-    const [_isLocked, _setIsLocked] = React.useState(defaultLocked)
 
     const open = openProp ?? _open
-    const isLocked = lockedProp ?? _isLocked
 
     const setOpen = React.useCallback(
       (value: boolean | ((value: boolean) => boolean)) => {
@@ -98,25 +87,11 @@ const SidebarProvider = React.forwardRef<
       [setOpenProp, open]
     )
 
-    const setIsLocked = React.useCallback(
-      (value: boolean | ((value: boolean) => boolean)) => {
-        const lockState = typeof value === "function" ? value(isLocked) : value
-        if (setLockedProp) {
-          setLockedProp(lockState)
-        } else {
-          _setIsLocked(lockState)
-        }
-        document.cookie = `${SIDEBAR_LOCK_COOKIE_NAME}=${lockState}; path=/; max-age=${SIDEBAR_COOKIE_MAX_AGE}`
-      },
-      [setLockedProp, isLocked]
-    )
-
     const toggleSidebar = React.useCallback(() => {
-      if (isLocked) return
       return isMobile
         ? setOpenMobile((open) => !open)
         : setOpen((open) => !open)
-    }, [isMobile, setOpen, setOpenMobile, isLocked])
+    }, [isMobile, setOpen, setOpenMobile])
 
     React.useEffect(() => {
       const handleKeyDown = (event: KeyboardEvent) => {
@@ -136,17 +111,15 @@ const SidebarProvider = React.forwardRef<
 
     const contextValue = React.useMemo<SidebarContext>(
       () => ({
-        state: isLocked ? "expanded" : state,
-        open: isLocked ? true : open,
+        state: state,
+        open: open,
         setOpen,
-        isLocked,
-        setIsLocked,
         isMobile,
         openMobile,
         setOpenMobile,
         toggleSidebar,
       }),
-      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar, isLocked, setIsLocked]
+      [state, open, setOpen, isMobile, openMobile, setOpenMobile, toggleSidebar]
     )
 
     return (
@@ -177,27 +150,15 @@ const SidebarProvider = React.forwardRef<
 SidebarProvider.displayName = "SidebarProvider"
 
 const SidebarToggle = () => {
-    const { state, toggleSidebar, isLocked, setIsLocked } = useSidebar();
+    const { state, toggleSidebar } = useSidebar();
 
     return (
         <div className="group absolute bottom-8 z-50 group-data-[side=left]:-right-4 group-data-[side=right]:-left-4">
             <Button
                 variant="ghost"
                 size="icon"
-                className={cn(
-                    "size-7 rounded-full bg-background hover:bg-background border shadow-md absolute -top-10 left-1/2 -translate-x-1/2 transition-opacity opacity-0 group-hover:opacity-100"
-                )}
-                onClick={() => setIsLocked(!isLocked)}
-            >
-                {isLocked ? <Unlock /> : <Lock />}
-                <span className="sr-only">{isLocked ? "Unlock Sidebar" : "Lock Sidebar"}</span>
-            </Button>
-            <Button
-                variant="ghost"
-                size="icon"
                 className="size-8 rounded-full bg-background hover:bg-background border shadow-md"
                 onClick={toggleSidebar}
-                disabled={isLocked}
             >
                 {state === 'expanded' ? <ChevronLeft /> : <ChevronRight />}
                 <span className="sr-only">Toggle Sidebar</span>
@@ -226,7 +187,7 @@ const Sidebar = React.forwardRef<
     },
     ref
   ) => {
-    const { isMobile, state, openMobile, setOpenMobile, isLocked } = useSidebar()
+    const { isMobile, state, openMobile, setOpenMobile } = useSidebar()
 
     if (collapsible === "none") {
       return (
