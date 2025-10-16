@@ -35,20 +35,23 @@
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: hsl(var(--primary) / 0.1);
-    --sidebar-foreground: hsl(var(--primary));
+    
+    --sidebar-custom-bg: 217 11% 35%;
+    
+    --sidebar-background: var(--sidebar-custom-bg);
+    --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: hsl(var(--primary));
-    --sidebar-primary-foreground: hsl(var(--background));
+    --sidebar-primary-foreground: hsl(var(--primary-foreground));
     --sidebar-accent: hsl(var(--accent));
     --sidebar-accent-foreground: hsl(var(--accent-foreground));
-    --sidebar-border: hsl(var(--primary) / 0.2);
+    --sidebar-border: 217 11% 45%;
     --sidebar-ring: hsl(var(--ring));
+    --radius: 0.5rem;
   }
   .dark {
-    --background: 240 10% 10%;
+    --background: 240 10% 15%;
     --foreground: 0 0% 92%;
-    --card: 0 0% 12%;
+    --card: 240 10% 12%;
     --card-foreground: 0 0% 92%;
     --popover: 0 0% 8%;
     --popover-foreground: 0 0% 92%;
@@ -76,13 +79,14 @@
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --sidebar-background: 240 10% 3.9%;
+    
+    --sidebar-background: var(--sidebar-custom-bg);
     --sidebar-foreground: 0 0% 98%;
     --sidebar-primary: hsl(var(--primary));
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
     --sidebar-accent: hsl(var(--accent));
     --sidebar-accent-foreground: hsl(var(--accent-foreground));
-    --sidebar-border: 0 0% 20%;
+    --sidebar-border: 217 11% 45%;
     --sidebar-ring: hsl(var(--ring));
   }
 }
