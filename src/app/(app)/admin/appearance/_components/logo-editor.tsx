@@ -13,7 +13,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
 import { Cropper, CropperRef } from 'react-advanced-cropper';
 import 'react-advanced-cropper/dist/style.css';
 import { getStorage, ref as storageRef, uploadString, getDownloadURL } from "firebase/storage";
@@ -43,7 +42,6 @@ export function LogoEditor() {
             });
             reader.readAsDataURL(e.target.files[0]);
         }
-        // Reset file input to allow re-uploading the same file
         if(e.target) e.target.value = "";
     };
 
@@ -89,7 +87,6 @@ export function LogoEditor() {
     const handleOpenChange = (isOpen: boolean) => {
         setOpen(isOpen);
         if (!isOpen) {
-            // Reset state when dialog closes
             setImage(null);
             setLoading(false);
         }
@@ -111,14 +108,14 @@ export function LogoEditor() {
                         Add Logo
                     </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-sm">
                     <DialogHeader>
                         <DialogTitle>Update Logo</DialogTitle>
                         <DialogDescription>
                             Upload and crop the image to a square. This will be your new application logo.
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="relative h-80 w-full bg-muted rounded-md flex items-center justify-center">
+                    <div className="relative h-64 w-64 bg-muted rounded-md flex items-center justify-center mx-auto">
                        {image ? (
                          <div className="relative h-full w-full">
                            <Cropper 
@@ -126,6 +123,10 @@ export function LogoEditor() {
                               src={image} 
                               className={'cropper'} 
                               stencilProps={{aspectRatio: 1}}
+                              stencilSize={{
+                                width: 200,
+                                height: 200
+                              }}
                            />
                          </div>
                        ) : (

@@ -1,23 +1,22 @@
-
 rules_version = '2';
-
-service firebase.storage {
-  match /b/{bucket}/o {
-    
-    function isSuperRole() {
-      return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super User', 'Super Admin'];
-    }
-
-    function isAuthenticated() {
-      return request.auth != null;
-    }
-
-    // Restrict access to the company logo
-    match /logos/logo.png {
-      // Allow authenticated users to view the logo
-      allow read: if isAuthenticated();
-      // Allow only super roles to modify the logo
-      allow write: if isSuperRole();
-    }
-  }
-}
+      
+      service firebase.storage {
+        match /b/{bucket}/o {
+          
+          function isSuperRole() {
+            return request.auth != null && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['Super User', 'Super Admin'];
+          }
+      
+          function isAuthenticated() {
+            return request.auth != null;
+          }
+      
+          // Restrict access to the company logo
+          match /logos/logo.png {
+            // Allow authenticated users to view the logo
+            allow read: if isAuthenticated();
+            // Allow any authenticated user to modify the logo
+            allow write: if isAuthenticated();
+          }
+        }
+      }

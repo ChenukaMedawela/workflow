@@ -76,7 +76,9 @@ export function AddLeadDialog({ sectors, onSectorAdded }: AddLeadDialogProps) {
     const fetchData = async () => {
         const entitiesCollection = collection(db, 'entities');
         const entitiesSnapshot = await getDocs(entitiesCollection);
-        setEntities(entitiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Entity)))
+        const entitiesList = entitiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Entity));
+        const filteredEntities = entitiesList.filter(e => e.name !== 'Default Entity');
+        setEntities(filteredEntities);
 
         const stagesCollection = collection(db, 'pipelineStages');
         const stagesSnapshot = await getDocs(stagesCollection);

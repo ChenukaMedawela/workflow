@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { Button } from "@/components/ui/button";
@@ -9,7 +8,7 @@ import { ArrowRight, PlusCircle } from "lucide-react";
 import Link from "next/link";
 import { db } from '@/lib/firebase';
 import { collection, onSnapshot, addDoc, query } from 'firebase/firestore';
-import { User, Entity } from '@/lib/types';
+import { User, Entity, Lead } from '@/lib/types';
 import { useAuth } from "@/hooks/use-auth";
 import React, { useEffect, useState } from "react";
 import { Input } from "@/components/ui/input";
@@ -21,6 +20,7 @@ export default function AdminEntitiesPage() {
     const { user, hasRole } = useAuth();
     const [users, setUsers] = useState<User[]>([]);
     const [entities, setEntities] = useState<Entity[]>([]);
+    const [leads, setLeads] = useState<Lead[]>([]);
     const [loading, setLoading] = useState(true);
     const [newEntityName, setNewEntityName] = useState("");
     const { toast } = useToast();
@@ -34,8 +34,10 @@ export default function AdminEntitiesPage() {
         
         const unsubEntities = onSnapshot(entitiesQuery, (snapshot) => {
             let entitiesList = snapshot.docs.map(doc => ({ ...doc.data(), id: doc.id } as Entity));
+            
+            entitiesList = entitiesList.filter(e => e.name !== 'Default Entity');
+
             if (!isSuper) {
-                // For non-super users, filter to only their entity
                 entitiesList = entitiesList.filter(e => e.id === user.entityId);
             }
             setEntities(entitiesList);
@@ -47,9 +49,15 @@ export default function AdminEntitiesPage() {
             setUsers(usersList);
         });
 
+        const unsubLeads = onSnapshot(collection(db, 'leads'), (snapshot) => {
+            const leadsList = snapshot.docs.map(doc => doc.data() as Lead);
+            setLeads(leadsList);
+        });
+
         return () => {
             unsubEntities();
             unsubUsers();
+            unsubLeads();
         };
 
     }, [user, hasRole]);
@@ -119,16 +127,19 @@ export default function AdminEntitiesPage() {
                         <TableRow>
                             <TableHead>Entity Name</TableHead>
                             <TableHead>User Count</TableHead>
+                            <TableHead>Lead Count</TableHead>
                             <TableHead><span className="sr-only">Actions</span></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {entities.map(entity => {
                             const userCount = users.filter(u => u.entityId === entity.id).length;
+                            const leadCount = leads.filter(l => l.ownerEntityId === entity.id).length;
                             return (
                                 <TableRow key={entity.id}>
                                     <TableCell className="font-medium">{entity.name}</TableCell>
                                     <TableCell>{userCount}</TableCell>
+                                    <TableCell>{leadCount}</TableCell>
                                     <TableCell className="text-right">
                                         <Button variant="outline" size="sm" asChild>
                                             <Link href={`/admin/entities/${entity.id}`}>
@@ -141,7 +152,7 @@ export default function AdminEntitiesPage() {
                         })}
                          {entities.length === 0 && (
                             <TableRow>
-                                <TableCell colSpan={3} className="text-center h-24">No entities found.</TableCell>
+                                <TableCell colSpan={4} className="text-center h-24">No entities found.</TableCell>
                             </TableRow>
                         )}
                     </TableBody>

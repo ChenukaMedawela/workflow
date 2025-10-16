@@ -118,6 +118,7 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
 
   const isEntityHidden = watchRole === 'Super Admin' || watchRole === 'Super User';
   const assignableRoles = getAssignableRoles();
+  const filteredEntities = entities.filter(e => e.name !== 'Default Entity');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -215,7 +216,7 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
                         </FormControl>
                         <SelectContent>
                         <SelectItem value="global">Global</SelectItem>
-                        {entities.map((entity) => (
+                        {filteredEntities.map((entity) => (
                             <SelectItem key={entity.id} value={entity.id}>
                             {entity.name}
                             </SelectItem>
