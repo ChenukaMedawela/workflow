@@ -498,30 +498,73 @@ const SidebarGroupContent = React.forwardRef<
 ))
 SidebarGroupContent.displayName = "SidebarGroupContent"
 
-const SidebarMenu = React.forwardRef<
-  HTMLUListElement,
-  React.ComponentProps<"ul">
->(({ className, ...props }, ref) => (
-  <ul
-    ref={ref}
-    data-sidebar="menu"
-    className={cn("flex w-full min-w-0 flex-col gap-1", className)}
-    {...props}
-  />
-))
+type SidebarMenuContextProps = {
+    activeItem: string | null;
+    setActiveItem: (id: string | null, element: HTMLElement | null) => void;
+};
+  
+const SidebarMenuContext = React.createContext<SidebarMenuContextProps | null>(null);
+
+const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(
+    ({ className, ...props }, ref) => {
+      const menuRef = React.useRef<HTMLUListElement>(null);
+      const [activeItem, setActiveItem] = React.useState<{ id: string | null, element: HTMLElement | null }>({ id: null, element: null });
+      const [highlighterStyle, setHighlighterStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
+  
+      const setActiveItemWithElement = React.useCallback((id: string | null, element: HTMLElement | null) => {
+        setActiveItem({ id, element });
+      }, []);
+  
+      React.useEffect(() => {
+        if (activeItem.element && menuRef.current) {
+          const menuRect = menuRef.current.getBoundingClientRect();
+          const itemRect = activeItem.element.getBoundingClientRect();
+          setHighlighterStyle({
+            top: itemRect.top - menuRect.top,
+            height: itemRect.height,
+            opacity: 1,
+          });
+        } else {
+          setHighlighterStyle(s => ({ ...s, opacity: 0 }));
+        }
+      }, [activeItem]);
+  
+      return (
+        <SidebarMenuContext.Provider value={{ activeItem: activeItem.id, setActiveItem: setActiveItemWithElement }}>
+          <ul
+            ref={menuRef}
+            data-sidebar="menu"
+            className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
+            {...props}
+          >
+            <div
+              className="absolute left-0 w-full rounded-md bg-sidebar-primary border-sidebar-primary-border border transition-transform duration-300 ease-in-out"
+              style={{
+                transform: `translateY(${highlighterStyle.top}px)`,
+                height: `${highlighterStyle.height}px`,
+                opacity: highlighterStyle.opacity,
+              }}
+            />
+            {props.children}
+          </ul>
+        </SidebarMenuContext.Provider>
+      );
+    }
+);
 SidebarMenu.displayName = "SidebarMenu"
 
-const SidebarMenuItem = React.forwardRef<
-  HTMLLIElement,
-  React.ComponentProps<"li">
->(({ className, ...props }, ref) => (
-  <li
-    ref={ref}
-    data-sidebar="menu-item"
-    className={cn("group/menu-item relative", className)}
-    {...props}
-  />
-))
+const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>(
+    ({ className, ...props }, ref) => {
+      return (
+        <li
+          ref={ref}
+          data-sidebar="menu-item"
+          className={cn("group/menu-item relative", className)}
+          {...props}
+        />
+      );
+    }
+);
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
@@ -529,8 +572,8 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground",
-        ghost: "bg-transparent data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground data-[active=true]:border-sidebar-primary-border data-[active=true]:border",
+        default: "data-[active=true]:text-sidebar-primary-foreground",
+        ghost: "bg-transparent data-[active=true]:text-sidebar-primary-foreground",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
@@ -567,12 +610,33 @@ const SidebarMenuButton = React.forwardRef<
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button"
-    const { isMobile, state } = useSidebar()
+    const Comp = asChild ? Slot : "button";
+    const { isMobile, state } = useSidebar();
+    const menuContext = React.useContext(SidebarMenuContext);
+    const buttonRef = React.useRef<HTMLButtonElement>(null);
+    const uniqueId = React.useId();
+  
+    React.useEffect(() => {
+      if (isActive && menuContext && buttonRef.current) {
+        menuContext.setActiveItem(uniqueId, buttonRef.current);
+      }
+    }, [isActive, menuContext, uniqueId]);
+  
+    const composedRef = React.useCallback(
+      (node: HTMLButtonElement) => {
+        (buttonRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+        if (typeof ref === 'function') {
+          ref(node);
+        } else if (ref) {
+          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
+        }
+      },
+      [ref]
+    );
 
     const button = (
       <Comp
-        ref={ref}
+        ref={composedRef}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
