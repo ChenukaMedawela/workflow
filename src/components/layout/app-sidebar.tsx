@@ -93,17 +93,19 @@ import { cn } from "@/lib/utils";
 
     return (
       <Sidebar variant="sidebar" collapsible="icon">
-        <SidebarHeader className="flex items-center gap-2">
-            {logoUrl ? (
-                <Image src={logoUrl} alt="Company Logo" width={28} height={28} className="size-7 object-contain" />
-            ) : (
-                <Logo className="size-7 text-primary" />
-            )}
-          <span className={cn("text-lg font-semibold text-sidebar-foreground whitespace-nowrap transition-all duration-300",
-             "group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0"
-          )}>
-            Workflow CRM
-          </span>
+        <SidebarHeader>
+            <Link href="/dashboard" className="flex items-center gap-2">
+                {logoUrl ? (
+                    <Image src={logoUrl} alt="Company Logo" width={28} height={28} className="size-7 object-contain" />
+                ) : (
+                    <Logo className="size-7 text-primary" />
+                )}
+              <span className={cn("text-lg font-semibold text-sidebar-foreground whitespace-nowrap transition-all duration-300",
+                 "group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0"
+              )}>
+                Workflow CRM
+              </span>
+            </Link>
         </SidebarHeader>
         <SidebarContent className="p-2">
           <SidebarMenu>
