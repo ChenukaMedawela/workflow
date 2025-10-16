@@ -565,7 +565,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
           {activeItem && (
              <div
                 className={cn(
-                  "absolute left-0 z-0 w-full rounded-md border border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
+                  "absolute left-0 z-0 w-full rounded-md border-2 border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
                   "group-data-[collapsible=icon]:hidden"
                 )}
                 style={{
