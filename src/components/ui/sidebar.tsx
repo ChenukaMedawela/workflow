@@ -565,7 +565,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
           {activeItem && (
              <div
                 className={cn(
-                  "absolute left-0 z-0 w-full rounded-md border-2 border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
+                  "absolute left-0 z-0 w-full rounded-md border border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
                   "group-data-[collapsible=icon]:hidden"
                 )}
                 style={{
@@ -612,7 +612,7 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       variant: {
         default:
-          "bg-transparent text-sidebar-foreground",
+          "bg-transparent text-sidebar-foreground data-[active=true]:text-sidebar-primary-foreground",
         ghost: "bg-transparent text-sidebar-primary-foreground",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
@@ -653,7 +653,7 @@ const SidebarMenuButton = React.forwardRef<
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
     
-    const variant = isActive ? "ghost" : variantProp;
+    const variant = variantProp;
 
     const button = (
       <Comp
