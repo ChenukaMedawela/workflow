@@ -453,6 +453,7 @@ export default function LeadsPage() {
                                     <TableHead>Account Name</TableHead>
                                     <TableHead>Stage</TableHead>
                                     <TableHead>Sector</TableHead>
+                                    <TableHead>Amount</TableHead>
                                     <TableHead>Owner Entity</TableHead>
                                     <TableHead>Contract Type</TableHead>
                                     <TableHead>Contract Start</TableHead>
@@ -491,7 +492,7 @@ export default function LeadsPage() {
                                 </TableRow>
                                 {isBulkEditMode && (
                                     <TableRow className="bg-muted/50 hover:bg-muted/50">
-                                        <TableCell colSpan={8} className="p-2">
+                                        <TableCell colSpan={9} className="p-2">
                                             <div className="flex items-center gap-2">
                                                  <span className="text-sm font-medium pl-2">{selectedLeadIds.length} selected</span>
                                                 <Select onValueChange={setBulkActionType} value={bulkActionType}>
@@ -522,6 +523,7 @@ export default function LeadsPage() {
                                             <TableCell className="font-medium">{lead.accountName || 'N/A'}</TableCell>
                                             <TableCell>{getStageName(lead.stageId)}</TableCell>
                                             <TableCell>{lead.sector || 'N/A'}</TableCell>
+                                            <TableCell>{lead.amount ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(lead.amount) : 'N/A'}</TableCell>
                                             <TableCell>{getOwnerEntityName(lead)}</TableCell>
                                             <TableCell>{lead.contractType || 'N_A'}</TableCell>
                                             <TableCell>{isValidDate(lead.contractStartDate) ? format(new Date(lead.contractStartDate), "PPP") : 'N_A'}</TableCell>
@@ -548,7 +550,7 @@ export default function LeadsPage() {
                                     ))
                                 ) : (
                                     <TableRow>
-                                        <TableCell colSpan={8} className="h-24 text-center">
+                                        <TableCell colSpan={9} className="h-24 text-center">
                                             No leads found.
                                         </TableCell>
                                     </TableRow>
