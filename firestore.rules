@@ -3,11 +3,11 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // This rule allows any authenticated user to read and write to all documents.
-    // It's good for development but should be replaced with more secure rules
-    // for a production environment.
     match /{document=**} {
-      allow read, write: if request.auth != null;
+      // Allow public reads ONLY for the theme document for login page styling.
+      // All other reads, and all writes, still require authentication.
+      allow read: if (request.path == /databases/$(database)/documents/settings/theme) || request.auth != null;
+      allow write: if request.auth != null;
     }
   }
 }

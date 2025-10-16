@@ -106,7 +106,7 @@ const SignupPage = () => {
   };
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm h-[70vh] flex flex-col overflow-y-auto">
       <CardHeader className="text-center">
         <div className="flex justify-center items-center mb-4 h-10">
             {logoUrl ? (
@@ -121,8 +121,8 @@ const SignupPage = () => {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleSignup)}>
-          <CardContent className="grid gap-4">
+        <form onSubmit={form.handleSubmit(handleSignup)} className="flex flex-col flex-grow">
+          <CardContent className="grid gap-4 flex-grow">
             <FormField
               control={form.control}
               name="name"
@@ -238,7 +238,7 @@ const SignupPage = () => {
               )}
             />
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 mt-auto">
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary-foreground border-t-transparent"></div>

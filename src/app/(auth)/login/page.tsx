@@ -16,7 +16,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
-import { Logo } from "@/components/icons";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -82,13 +81,11 @@ export default function LoginPage() {
   };
 
   return (
-    <Card className="w-full max-w-sm">
+    <Card className="w-full max-w-sm h-[70vh] flex flex-col overflow-y-auto">
       <CardHeader className="text-center">
         <div className="flex justify-center items-center mb-4 h-10">
-          {logoUrl ? (
+          {logoUrl && (
             <Image src={logoUrl} alt="Company Logo" width={40} height={40} className="object-contain" />
-          ) : (
-            <Logo className="h-8 w-8 text-primary" />
           )}
         </div>
         <CardTitle className="text-2xl">Welcome to Workflow CRM</CardTitle>
@@ -97,8 +94,8 @@ export default function LoginPage() {
         </CardDescription>
       </CardHeader>
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(handleLogin)}>
-          <CardContent className="grid gap-4">
+        <form onSubmit={form.handleSubmit(handleLogin)} className="flex flex-col flex-grow">
+          <CardContent className="grid gap-4 flex-grow">
             <FormField
               control={form.control}
               name="email"
@@ -159,7 +156,7 @@ export default function LoginPage() {
                 </Link>
             </div>
           </CardContent>
-          <CardFooter className="flex flex-col gap-4">
+          <CardFooter className="flex flex-col gap-4 mt-auto">
             <Button className="w-full" type="submit" disabled={isLoading}>
               {isLoading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary-foreground border-t-transparent"></div>

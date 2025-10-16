@@ -105,12 +105,32 @@ export default {
             '20%, 80%': { transform: 'translate3d(2px, 0, 0)' },
             '30%, 50%, 70%': { transform: 'translate3d(-4px, 0, 0)' },
             '40%, 60%': { transform: 'translate3d(4px, 0, 0)' },
-        }
+        },
+        'slide-in-from-left': {
+            '0%': { transform: 'translateX(-100%)' },
+            '100%': { transform: 'translateX(0)' },
+        },
+        'slide-in-from-right': {
+            '0%': { transform: 'translateX(100%)' },
+            '100%': { transform: 'translateX(0)' },
+        },
+        'slide-out-to-left': {
+            '0%': { transform: 'translateX(0)' },
+            '100%': { transform: 'translateX(-100%)' },
+        },
+        'slide-out-to-right': {
+            '0%': { transform: 'translateX(0)' },
+            '100%': { transform: 'translateX(100%)' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
         'shake': 'shake 0.82s cubic-bezier(.36,.07,.19,.97) both',
+        'slide-in-from-left': 'slide-in-from-left 0.5s forwards',
+        'slide-in-from-right': 'slide-in-from-right 0.5s forwards',
+        'slide-out-to-left': 'slide-out-to-left 0.5s forwards',
+        'slide-out-to-right': 'slide-out-to-right 0.5s forwards',
       },
       transitionTimingFunction: {
         'spring': 'cubic-bezier(0.34, 1.56, 0.64, 1)',
