@@ -498,58 +498,84 @@ const SidebarGroupContent = React.forwardRef<
 ))
 SidebarGroupContent.displayName = "SidebarGroupContent"
 
-type SidebarMenuContextProps = {
-    activeItem: string | null;
-    setActiveItem: (id: string | null, element: HTMLElement | null) => void;
-};
-  
-const SidebarMenuContext = React.createContext<SidebarMenuContextProps | null>(null);
-
 const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(
-    ({ className, ...props }, ref) => {
-      const menuRef = React.useRef<HTMLUListElement>(null);
-      const [activeItem, setActiveItem] = React.useState<{ id: string | null, element: HTMLElement | null }>({ id: null, element: null });
-      const [highlighterStyle, setHighlighterStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
-  
-      const setActiveItemWithElement = React.useCallback((id: string | null, element: HTMLElement | null) => {
-        setActiveItem({ id, element });
-      }, []);
-  
-      React.useEffect(() => {
-        if (activeItem.element && menuRef.current) {
-          const menuRect = menuRef.current.getBoundingClientRect();
-          const itemRect = activeItem.element.getBoundingClientRect();
-          setHighlighterStyle({
-            top: itemRect.top - menuRect.top,
-            height: itemRect.height,
-            opacity: 1,
-          });
-        } else {
-          setHighlighterStyle(s => ({ ...s, opacity: 0 }));
+  ({ className, children, ...props }, ref) => {
+    const menuRef = React.useRef<HTMLUListElement>(null);
+    const itemRefs = React.useRef<Record<string, HTMLLIElement>>({});
+    const [activeItem, setActiveItem] = React.useState<string | null>(null);
+    const [highlighterStyle, setHighlighterStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
+
+    React.useEffect(() => {
+      let activeElement: HTMLLIElement | null = null;
+      let activeId: string | null = null;
+      
+      React.Children.forEach(children, (child) => {
+        if (React.isValidElement(child) && child.props.children) {
+          const button = React.Children.toArray(child.props.children).find(
+            (c) => React.isValidElement(c) && c.props['data-sidebar'] === 'menu-button' && c.props['data-active'] === true
+          ) as React.ReactElement | undefined;
+          
+          if (button) {
+            activeId = button.props.id;
+          }
         }
-      }, [activeItem]);
-  
-      return (
-        <SidebarMenuContext.Provider value={{ activeItem: activeItem.id, setActiveItem: setActiveItemWithElement }}>
-          <ul
-            ref={menuRef}
-            data-sidebar="menu"
-            className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
-            {...props}
-          >
-            <div
-              className="absolute left-0 w-full rounded-md bg-sidebar-primary border-sidebar-primary-border border transition-transform duration-300 ease-in-out"
-              style={{
-                transform: `translateY(${highlighterStyle.top}px)`,
-                height: `${highlighterStyle.height}px`,
-                opacity: highlighterStyle.opacity,
-              }}
-            />
-            {props.children}
-          </ul>
-        </SidebarMenuContext.Provider>
-      );
-    }
+      });
+      
+      if (activeId && itemRefs.current[activeId]) {
+        activeElement = itemRefs.current[activeId];
+      }
+
+      if (activeElement && menuRef.current) {
+        const menuRect = menuRef.current.getBoundingClientRect();
+        const itemRect = activeElement.getBoundingClientRect();
+        setHighlighterStyle({
+          top: itemRect.top - menuRect.top,
+          height: itemRect.height,
+          opacity: 1,
+        });
+      } else {
+        setHighlighterStyle(s => ({ ...s, opacity: 0 }));
+      }
+    }, [children]);
+
+    const enhancedChildren = React.Children.map(children, (child) => {
+      if (React.isValidElement(child)) {
+        const button = React.Children.toArray(child.props.children).find(
+          (c) => React.isValidElement(c) && c.props['data-sidebar'] === 'menu-button'
+        ) as React.ReactElement | undefined;
+        
+        if (button) {
+            const buttonId = button.props.id || `sidebar-menu-item-${React.useId()}`;
+            return React.cloneElement(child, {
+                ref: (el: HTMLLIElement) => {
+                    itemRefs.current[buttonId] = el;
+                },
+                children: React.cloneElement(button, { id: buttonId }),
+            });
+        }
+      }
+      return child;
+    });
+
+    return (
+      <ul
+        ref={menuRef}
+        data-sidebar="menu"
+        className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
+        {...props}
+      >
+        <div
+          className="absolute left-0 w-full rounded-md bg-sidebar-primary border-sidebar-primary-border border transition-transform duration-300 ease-in-out"
+          style={{
+            transform: `translateY(${highlighterStyle.top}px)`,
+            height: `${highlighterStyle.height}px`,
+            opacity: highlighterStyle.opacity,
+          }}
+        />
+        {enhancedChildren}
+      </ul>
+    );
+  }
 );
 SidebarMenu.displayName = "SidebarMenu"
 
@@ -612,31 +638,10 @@ const SidebarMenuButton = React.forwardRef<
   ) => {
     const Comp = asChild ? Slot : "button";
     const { isMobile, state } = useSidebar();
-    const menuContext = React.useContext(SidebarMenuContext);
-    const buttonRef = React.useRef<HTMLButtonElement>(null);
-    const uniqueId = React.useId();
-  
-    React.useEffect(() => {
-      if (isActive && menuContext && buttonRef.current) {
-        menuContext.setActiveItem(uniqueId, buttonRef.current);
-      }
-    }, [isActive, menuContext, uniqueId]);
-  
-    const composedRef = React.useCallback(
-      (node: HTMLButtonElement) => {
-        (buttonRef as React.MutableRefObject<HTMLButtonElement | null>).current = node;
-        if (typeof ref === 'function') {
-          ref(node);
-        } else if (ref) {
-          (ref as React.MutableRefObject<HTMLButtonElement | null>).current = node;
-        }
-      },
-      [ref]
-    );
-
+   
     const button = (
       <Comp
-        ref={composedRef}
+        ref={ref}
         data-sidebar="menu-button"
         data-size={size}
         data-active={isActive}
