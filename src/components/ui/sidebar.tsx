@@ -506,22 +506,18 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
 
     React.useEffect(() => {
       let activeElement: HTMLLIElement | null = null;
-      let activeId: string | null = null;
       
-      React.Children.forEach(children, (child) => {
-        if (React.isValidElement(child) && child.props.children) {
-          const button = React.Children.toArray(child.props.children).find(
-            (c) => React.isValidElement(c) && c.props['data-sidebar'] === 'menu-button' && c.props['isActive'] === true
-          ) as React.ReactElement | undefined;
-          
-          if (button) {
-            activeId = button.props.id;
-          }
+      const activeChild = React.Children.toArray(children).find(child => 
+        React.isValidElement(child) && 
+        React.isValidElement(child.props.children) &&
+        child.props.children.props.isActive
+      );
+
+      if (React.isValidElement(activeChild)) {
+        const id = activeChild.props.children.props.id;
+        if(id && itemRefs.current[id]) {
+            activeElement = itemRefs.current[id];
         }
-      });
-      
-      if (activeId && itemRefs.current[activeId]) {
-        activeElement = itemRefs.current[activeId];
       }
 
       if (activeElement && menuRef.current) {
@@ -545,11 +541,12 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
         
         if (button) {
             const buttonId = button.props.id || `sidebar-menu-item-${React.useId()}`;
+            const newButton = React.cloneElement(button, { id: buttonId });
             return React.cloneElement(child as React.ReactElement<any>, {
                 ref: (el: HTMLLIElement) => {
                     if (el) itemRefs.current[buttonId] = el;
                 },
-                children: React.cloneElement(button, { id: buttonId }),
+                children: newButton,
             });
         }
       }
