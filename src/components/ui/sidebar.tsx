@@ -502,7 +502,6 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
   ({ className, children, ...props }, ref) => {
     const menuRef = React.useRef<HTMLUListElement>(null);
     const itemRefs = React.useRef<Record<string, HTMLLIElement>>({});
-    const [activeItem, setActiveItem] = React.useState<string | null>(null);
     const [highlighterStyle, setHighlighterStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
 
     React.useEffect(() => {
@@ -512,7 +511,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
       React.Children.forEach(children, (child) => {
         if (React.isValidElement(child) && child.props.children) {
           const button = React.Children.toArray(child.props.children).find(
-            (c) => React.isValidElement(c) && c.props['data-sidebar'] === 'menu-button' && c.props['data-active'] === true
+            (c) => React.isValidElement(c) && c.props['data-sidebar'] === 'menu-button' && c.props['isActive'] === true
           ) as React.ReactElement | undefined;
           
           if (button) {
@@ -546,9 +545,9 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
         
         if (button) {
             const buttonId = button.props.id || `sidebar-menu-item-${React.useId()}`;
-            return React.cloneElement(child, {
+            return React.cloneElement(child as React.ReactElement<any>, {
                 ref: (el: HTMLLIElement) => {
-                    itemRefs.current[buttonId] = el;
+                    if (el) itemRefs.current[buttonId] = el;
                 },
                 children: React.cloneElement(button, { id: buttonId }),
             });
@@ -565,7 +564,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
         {...props}
       >
         <div
-          className="absolute left-0 w-full rounded-md bg-sidebar-primary border-sidebar-primary-border border transition-transform duration-300 ease-in-out"
+          className="absolute left-0 w-full rounded-md bg-transparent border border-sidebar-primary transition-transform duration-300 ease-in-out"
           style={{
             transform: `translateY(${highlighterStyle.top}px)`,
             height: `${highlighterStyle.height}px`,
@@ -598,8 +597,8 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "data-[active=true]:text-sidebar-primary-foreground",
-        ghost: "bg-transparent data-[active=true]:text-sidebar-primary-foreground data-[active=true]:bg-sidebar-primary",
+        default: "bg-transparent text-sidebar-foreground data-[active=true]:text-sidebar-primary-foreground",
+        ghost: "bg-transparent data-[active=true]:text-sidebar-primary-foreground data-[active=true]:bg-transparent",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
@@ -628,7 +627,7 @@ const SidebarMenuButton = React.forwardRef<
     {
       asChild = false,
       isActive = false,
-      variant = "default",
+      variant = "ghost",
       size = "default",
       tooltip,
       className,
