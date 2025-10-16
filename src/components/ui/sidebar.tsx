@@ -153,7 +153,7 @@ const SidebarToggle = () => {
     const { state, toggleSidebar } = useSidebar();
 
     return (
-        <div className="group absolute bottom-8 z-50 group-data-[side=left]:-right-4 group-data-[side=right]:-left-4">
+        <div className="absolute bottom-8 z-50 group-data-[side=left]:-right-4 group-data-[side=right]:-left-4">
             <Button
                 variant="ghost"
                 size="icon"
