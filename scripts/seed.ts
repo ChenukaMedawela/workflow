@@ -1,17 +1,16 @@
 
-// scripts/seed.ts
-import { seedDatabase } from '@/lib/seed-db';
+import dotenv from 'dotenv';
+import path from 'path';
 
-// This is an async IIFE (Immediately Invoked Function Expression)
-(async () => {
-  try {
-    await seedDatabase();
-    console.log("Script finished.");
-    // Force the script to exit successfully
-    process.exit(0);
-  } catch (error) {
-    console.error("An error occurred during script execution: ", error);
-    // Force the script to exit with an error code
-    process.exit(1);
-  }
-})();
+// Load environment variables from .env.local
+dotenv.config({ path: path.resolve(process.cwd(), '.env.local') });
+
+import { seedDatabase } from '../src/lib/seed-db';
+
+seedDatabase().then(() => {
+  console.log('Database seeding completed successfully.');
+  process.exit(0);
+}).catch(error => {
+  console.error('Database seeding failed:', error);
+  process.exit(1);
+});

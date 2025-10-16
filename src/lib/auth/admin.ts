@@ -1,7 +1,7 @@
 
 'use server';
 
-import { auth as adminAuth } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { db } from '@/lib/firebase';
 import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { User, UserRole } from '@/lib/types';
@@ -18,6 +18,7 @@ interface CreateUserArgs {
 
 export async function createUser({ email, password, name, entityId, role, actor }: CreateUserArgs): Promise<User> {
   try {
+    const { auth: adminAuth } = getFirebaseAdmin();
     const userRecord = await adminAuth.createUser({
       email,
       password,
@@ -63,6 +64,7 @@ interface DeleteUserArgs {
 
 export async function deleteUser({ userToDelete, actor }: DeleteUserArgs): Promise<void> {
     try {
+        const { auth: adminAuth } = getFirebaseAdmin();
         await adminAuth.deleteUser(userToDelete.id);
         await deleteDoc(doc(db, "users", userToDelete.id));
         

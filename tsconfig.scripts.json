@@ -1,0 +1,14 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "outDir": "./dist",
+    "module": "CommonJS",
+    "moduleResolution": "node",
+    "noEmit": false
+  },
+  "include": [
+    "scripts",
+    "src/lib/seed-db.ts",
+    "src/lib/firebase-admin.ts"
+  ]
+}

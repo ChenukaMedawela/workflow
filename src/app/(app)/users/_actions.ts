@@ -8,10 +8,19 @@ const { db, auth } = getFirebaseAdmin();
 
 export async function approveUser(userId: string) {
   const userRef = db.collection('users').doc(userId);
+  
+  const entitiesSnapshot = await db.collection('entities').limit(1).get();
+  const entityId = entitiesSnapshot.docs[0]?.id;
+
   await userRef.update({
     status: 'approved',
     role: 'Viewer', // Default role
+    ...(entityId && { entityId }),
   });
+
+  // Revoke the user's refresh token to force re-authentication
+  await auth.revokeRefreshTokens(userId);
+
   revalidatePath('/(app)/users');
 }
 
