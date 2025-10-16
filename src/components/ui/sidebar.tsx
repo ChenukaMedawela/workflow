@@ -557,7 +557,7 @@ const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul"
 
     return (
         <ul
-          ref={ref}
+          ref={menuRef}
           data-sidebar="menu"
           className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
           {...props}
@@ -613,7 +613,7 @@ const sidebarMenuButtonVariants = cva(
       variant: {
         default:
           "bg-transparent text-sidebar-foreground",
-        ghost: "bg-sidebar-primary text-sidebar-primary-foreground shadow-none border border-sidebar-primary-border",
+        ghost: "bg-transparent text-sidebar-primary-foreground",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
