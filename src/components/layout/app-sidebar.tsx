@@ -35,6 +35,7 @@ import {
   import { doc, onSnapshot } from "firebase/firestore";
   import { db } from "@/lib/firebase";
   import Image from "next/image";
+import { cn } from "@/lib/utils";
 
   export function AppSidebar() {
     const { hasRole } = useAuth();
@@ -98,7 +99,9 @@ import {
             ) : (
                 <Logo className="size-7 text-primary" />
             )}
-          <span className="text-lg font-semibold text-sidebar-foreground group-data-[collapsible=icon]:hidden">
+          <span className={cn("text-lg font-semibold text-sidebar-foreground whitespace-nowrap transition-all duration-300",
+             "group-data-[collapsible=icon]:opacity-0 group-data-[collapsible=icon]:w-0"
+          )}>
             Workflow CRM
           </span>
         </SidebarHeader>
