@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
 import { CreditCard, LogOut, Settings, User } from "lucide-react";
+import { ThemeToggle } from "../theme-toggle";
 
 export function UserNav() {
   const { user, logout } = useAuth();
@@ -68,6 +69,10 @@ export function UserNav() {
             <span>Settings</span>
           </DropdownMenuItem>
         </DropdownMenuGroup>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+            <ThemeToggle />
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={logout}>
           <LogOut className="mr-2 h-4 w-4" />

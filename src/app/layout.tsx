@@ -5,7 +5,8 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
-import { ThemeProvider } from './(app)/theme-provider';
+import { ThemeProvider } from './theme-provider';
+import { ColorThemeProvider } from './color-theme-provider';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,11 +20,18 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <AuthProvider>
-          <ThemeProvider> 
-            <TooltipProvider>
-              {children}
-              <Toaster />
-            </TooltipProvider>
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="system"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <ColorThemeProvider> 
+              <TooltipProvider>
+                {children}
+                <Toaster />
+              </TooltipProvider>
+            </ColorThemeProvider>
           </ThemeProvider>
         </AuthProvider>
       </body>

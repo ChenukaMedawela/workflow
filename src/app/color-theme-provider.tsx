@@ -5,7 +5,7 @@ import { useEffect } from 'react';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
-export function ThemeProvider({ children }: { children: React.ReactNode }) {
+export function ColorThemeProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const themeRef = doc(db, 'settings', 'theme');
 
