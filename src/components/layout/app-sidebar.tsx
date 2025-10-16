@@ -111,7 +111,7 @@ import {
                   isActive={pathname.startsWith(item.href)}
                   tooltip={item.label}
                 >
-                  <Link href={item.href} className="hover:bg-accent">
+                  <Link href={item.href}>
                     <item.icon />
                     <span>{item.label}</span>
                   </Link>
@@ -125,7 +125,7 @@ import {
                   isActive={pathname.startsWith('/users')}
                   tooltip="User Management"
                 >
-                  <Link href="/users" className="hover:bg-accent">
+                  <Link href="/users">
                     <Users />
                     <span>User Management</span>
                   </Link>
@@ -139,7 +139,7 @@ import {
                   isActive={pathname.startsWith('/admin')}
                   tooltip="Admin"
                 >
-                  <Link href="/admin/placeholder" className="hover:bg-accent">
+                  <Link href="/admin/placeholder">
                     <Settings />
                     <span>Admin</span>
                   </Link>

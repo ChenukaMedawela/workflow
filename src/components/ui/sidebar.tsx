@@ -498,15 +498,95 @@ const SidebarGroupContent = React.forwardRef<
 ))
 SidebarGroupContent.displayName = "SidebarGroupContent"
 
+type ActiveItem = {
+  top: number;
+  height: number;
+};
+
 const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(
-  ({ className, ...props }, ref) => {
+  ({ className, children, ...props }, ref) => {
+    const menuRef = React.useRef<HTMLUListElement>(null);
+    const [activeItem, setActiveItem] = React.useState<ActiveItem | null>(null);
+    const itemRefs = React.useRef<Map<string, HTMLLIElement>>(new Map());
+
+    React.useEffect(() => {
+      const currentMenuRef = menuRef.current;
+      if (!currentMenuRef) return;
+    
+      const updateActiveItem = () => {
+        let foundActive = false;
+        for (const [key, itemEl] of itemRefs.current.entries()) {
+          const button = itemEl.querySelector('[data-sidebar="menu-button"][data-active="true"]');
+          if (button && currentMenuRef) {
+            const { top: menuTop } = currentMenuRef.getBoundingClientRect();
+            const { top: itemTop, height } = itemEl.getBoundingClientRect();
+            setActiveItem({ top: itemTop - menuTop, height });
+            foundActive = true;
+            break; 
+          }
+        }
+        if (!foundActive) {
+          setActiveItem(null); 
+        }
+      };
+    
+      updateActiveItem();
+    
+      // Use MutationObserver to detect changes in the DOM, including `data-active`
+      const observer = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'data-active') {
+            updateActiveItem();
+            break;
+          }
+        }
+      });
+    
+      itemRefs.current.forEach(itemEl => {
+        const button = itemEl.querySelector('[data-sidebar="menu-button"]');
+        if (button) {
+          observer.observe(button, { attributes: true });
+        }
+      });
+    
+      return () => {
+        observer.disconnect();
+      };
+    }, [children]);
+
+
     return (
-      <ul
-        ref={ref}
-        data-sidebar="menu"
-        className={cn("flex w-full min-w-0 flex-col gap-1", className)}
-        {...props}
-      />
+        <ul
+          ref={ref}
+          data-sidebar="menu"
+          className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
+          {...props}
+        >
+          {activeItem && (
+             <div
+                className={cn(
+                  "absolute left-0 z-0 w-full rounded-md border-2 border-sidebar-primary bg-transparent transition-transform duration-300 ease-spring",
+                  "group-data-[collapsible=icon]:hidden"
+                )}
+                style={{
+                  transform: `translateY(${activeItem.top}px)`,
+                  height: `${activeItem.height}px`,
+                }}
+              />
+          )}
+          {React.Children.map(children, (child) => {
+            if (React.isValidElement(child)) {
+                const key = child.key ?? React.useId();
+                return React.cloneElement(child as React.ReactElement, {
+                    ref: (el: HTMLLIElement) => {
+                        if (el) itemRefs.current.set(key, el);
+                        else itemRefs.current.delete(key);
+                    },
+                });
+            }
+            return child;
+           })}
+        </ul>
     )
   }
 )
@@ -572,7 +652,7 @@ const SidebarMenuButton = React.forwardRef<
   ) => {
     const Comp = asChild ? Slot : "button"
     const { isMobile, state } = useSidebar()
-
+    
     const variant = isActive ? "ghost" : variantProp;
 
     const button = (
