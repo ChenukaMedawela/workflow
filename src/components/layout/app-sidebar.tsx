@@ -35,14 +35,14 @@ import {
   import { doc, onSnapshot } from "firebase/firestore";
   import { db } from "@/lib/firebase";
   import Image from "next/image";
-  
+
   export function AppSidebar() {
     const { hasRole } = useAuth();
     const pathname = usePathname();
     const [logoUrl, setLogoUrl] = useState<string | null>(null);
-  
+
     const isAdminVisible = hasRole(["Super User", "Admin", "Super Admin"]);
-  
+
     useEffect(() => {
         const themeRef = doc(db, 'settings', 'theme');
         const unsubscribe = onSnapshot(themeRef, (doc) => {
@@ -82,14 +82,14 @@ import {
         label: "Audit Trail",
       },
     ];
-  
+
     const adminMenuItems = [
         { href: "/admin/entities", icon: Building, label: "Entities" },
         { href: "/admin/pipeline-stages", icon: ChevronsRightLeft, label: "Pipeline Stages" },
         { href: "/admin/pipeline-automation", icon: Lightbulb, label: "Automation" },
         { href: "/admin/appearance", icon: Palette, label: "Appearance" },
     ]
-  
+
     return (
       <Sidebar variant="sidebar" collapsible="icon">
         <SidebarHeader className="flex items-center gap-2">
@@ -108,11 +108,10 @@ import {
               <SidebarMenuItem key={item.href}>
                 <SidebarMenuButton
                   asChild
-                  variant="ghost"
                   isActive={pathname.startsWith(item.href)}
                   tooltip={item.label}
                 >
-                  <Link href={item.href}>
+                  <Link href={item.href} className="hover:bg-accent">
                     <item.icon />
                     <span>{item.label}</span>
                   </Link>
@@ -123,11 +122,10 @@ import {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  variant="ghost"
                   isActive={pathname.startsWith('/users')}
                   tooltip="User Management"
                 >
-                  <Link href="/users">
+                  <Link href="/users" className="hover:bg-accent">
                     <Users />
                     <span>User Management</span>
                   </Link>
@@ -138,11 +136,10 @@ import {
               <SidebarMenuItem>
                 <SidebarMenuButton
                   asChild
-                  variant="ghost"
                   isActive={pathname.startsWith('/admin')}
                   tooltip="Admin"
                 >
-                  <Link href="/admin">
+                  <Link href="/admin/placeholder" className="hover:bg-accent">
                     <Settings />
                     <span>Admin</span>
                   </Link>

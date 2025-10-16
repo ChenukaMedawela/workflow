@@ -4,10 +4,11 @@
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import { Building, ChevronsRightLeft, Lightbulb, Palette } from 'lucide-react';
+import { Building, ChevronsRightLeft, Lightbulb, Palette, FileQuestion } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const adminTabsList = [
+    { name: "Placeholder", href: "/admin/placeholder", icon: FileQuestion, role: ['Admin', 'Super User', 'Super Admin'] },
     { name: "Entities", href: "/admin/entities", icon: Building, role: ['Admin', 'Super User', 'Super Admin'] },
     { name: "Pipeline Stages", href: "/admin/pipeline-stages", icon: ChevronsRightLeft, role: ['Super User', 'Super Admin'] },
     { name: "Automation", href: "/admin/pipeline-automation", icon: Lightbulb, role: ['Super User', 'Super Admin'] },

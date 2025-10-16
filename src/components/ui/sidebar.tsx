@@ -499,94 +499,31 @@ const SidebarGroupContent = React.forwardRef<
 SidebarGroupContent.displayName = "SidebarGroupContent"
 
 const SidebarMenu = React.forwardRef<HTMLUListElement, React.ComponentProps<"ul">>(
-  ({ className, children, ...props }, ref) => {
-    const menuRef = React.useRef<HTMLUListElement>(null);
-    const itemRefs = React.useRef<Record<string, HTMLLIElement>>({});
-    const [highlighterStyle, setHighlighterStyle] = React.useState({ top: 0, height: 0, opacity: 0 });
-
-    React.useEffect(() => {
-      let activeElement: HTMLLIElement | null = null;
-      
-      const activeChild = React.Children.toArray(children).find(child => 
-        React.isValidElement(child) && 
-        React.isValidElement(child.props.children) &&
-        child.props.children.props.isActive
-      );
-
-      if (React.isValidElement(activeChild)) {
-        const id = activeChild.props.children.props.id;
-        if(id && itemRefs.current[id]) {
-            activeElement = itemRefs.current[id];
-        }
-      }
-
-      if (activeElement && menuRef.current) {
-        const menuRect = menuRef.current.getBoundingClientRect();
-        const itemRect = activeElement.getBoundingClientRect();
-        setHighlighterStyle({
-          top: itemRect.top - menuRect.top,
-          height: itemRect.height,
-          opacity: 1,
-        });
-      } else {
-        setHighlighterStyle(s => ({ ...s, opacity: 0 }));
-      }
-    }, [children]);
-
-    const enhancedChildren = React.Children.map(children, (child) => {
-      if (React.isValidElement(child)) {
-        const button = React.Children.toArray(child.props.children).find(
-          (c) => React.isValidElement(c) && c.props['data-sidebar'] === 'menu-button'
-        ) as React.ReactElement | undefined;
-        
-        if (button) {
-            const buttonId = button.props.id || `sidebar-menu-item-${React.useId()}`;
-            const newButton = React.cloneElement(button, { id: buttonId });
-            return React.cloneElement(child as React.ReactElement<any>, {
-                ref: (el: HTMLLIElement) => {
-                    if (el) itemRefs.current[buttonId] = el;
-                },
-                children: newButton,
-            });
-        }
-      }
-      return child;
-    });
-
+  ({ className, ...props }, ref) => {
     return (
       <ul
-        ref={menuRef}
+        ref={ref}
         data-sidebar="menu"
-        className={cn("relative flex w-full min-w-0 flex-col gap-1", className)}
+        className={cn("flex w-full min-w-0 flex-col gap-1", className)}
         {...props}
-      >
-        <div
-          className="absolute left-0 w-full rounded-md bg-transparent border border-sidebar-primary transition-transform duration-300 ease-in-out"
-          style={{
-            transform: `translateY(${highlighterStyle.top}px)`,
-            height: `${highlighterStyle.height}px`,
-            opacity: highlighterStyle.opacity,
-          }}
-        />
-        {enhancedChildren}
-      </ul>
-    );
+      />
+    )
   }
-);
+)
 SidebarMenu.displayName = "SidebarMenu"
 
 const SidebarMenuItem = React.forwardRef<HTMLLIElement, React.ComponentProps<"li">>(
-    ({ className, ...props }, ref) => {
-      return (
-        <li
-          ref={ref}
-          data-sidebar="menu-item"
-          className={cn("group/menu-item relative", className)}
-          {...props}
-        />
-      );
-    }
-);
+  ({ className, ...props }, ref) => {
+    return (
+      <li
+        ref={ref}
+        data-sidebar="menu-item"
+        className={cn("group/menu-item relative", className)}
+        {...props}
+      />
+    )
+  }
+)
 SidebarMenuItem.displayName = "SidebarMenuItem"
 
 const sidebarMenuButtonVariants = cva(
@@ -594,8 +531,9 @@ const sidebarMenuButtonVariants = cva(
   {
     variants: {
       variant: {
-        default: "bg-transparent text-sidebar-foreground data-[active=true]:text-sidebar-primary-foreground",
-        ghost: "bg-transparent data-[active=true]:text-sidebar-primary-foreground data-[active=true]:bg-transparent",
+        default:
+          "bg-transparent text-sidebar-foreground",
+        ghost: "bg-sidebar-primary text-sidebar-primary-foreground shadow-none border border-sidebar-primary-border",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-sidebar-accent hover:text-sidebar-accent-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
@@ -624,7 +562,7 @@ const SidebarMenuButton = React.forwardRef<
     {
       asChild = false,
       isActive = false,
-      variant = "ghost",
+      variant: variantProp,
       size = "default",
       tooltip,
       className,
@@ -632,9 +570,11 @@ const SidebarMenuButton = React.forwardRef<
     },
     ref
   ) => {
-    const Comp = asChild ? Slot : "button";
-    const { isMobile, state } = useSidebar();
-   
+    const Comp = asChild ? Slot : "button"
+    const { isMobile, state } = useSidebar()
+
+    const variant = isActive ? "ghost" : variantProp;
+
     const button = (
       <Comp
         ref={ref}
