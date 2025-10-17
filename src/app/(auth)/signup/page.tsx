@@ -24,7 +24,7 @@ import Link from "next/link";
 import { Eye, EyeOff } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Entity } from "@/lib/types";
-import { collection, doc, getDoc, getDocs } from "firebase/firestore";
+import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import Image from 'next/image';
 
@@ -65,8 +65,8 @@ const SignupPage = () => {
 
   React.useEffect(() => {
     const fetchEntities = async () => {
-      const entitiesCollection = collection(db, 'entities');
-      const entitiesSnapshot = await getDocs(entitiesCollection);
+      const q = query(collection(db, 'entities'), where("name", "!=", "Default Entity"));
+      const entitiesSnapshot = await getDocs(q);
       setEntities(entitiesSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Entity)));
     };
     fetchEntities();
@@ -80,6 +80,17 @@ const SignupPage = () => {
     };
     fetchLogo();
   }, []);
+
+  React.useEffect(() => {
+    if (entities.length > 0 && !form.getValues("entityId")) {
+      const globalEntity = entities.find(e => e.name === 'Global');
+      if (globalEntity) {
+        form.setValue("entityId", globalEntity.id);
+      } else if (entities.length > 0) {
+        form.setValue("entityId", entities[0].id);
+      }
+    }
+  }, [entities, form]);
 
   const handleSignup = async (values: SignupFormValues) => {
     setIsLoading(true);
@@ -163,15 +174,14 @@ const SignupPage = () => {
                 name="entityId"
                 render={({ field }) => (
                     <FormItem>
-                    <FormLabel>Entity (Optional)</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isLoading}>
+                    <FormLabel>Entity</FormLabel>
+                    <Select onValueChange={field.onChange} value={field.value} disabled={isLoading}>
                         <FormControl>
                         <SelectTrigger>
                             <SelectValue placeholder="Select an entity" />
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                        <SelectItem value="global">Global</SelectItem>
                         {entities.map((entity) => (
                             <SelectItem key={entity.id} value={entity.id}>
                             {entity.name}

@@ -24,7 +24,11 @@ import { useAuth } from '@/hooks/use-auth';
 
 const storage = getStorage(app);
 
-export function CoverImageEditor() {
+interface CoverImageEditorProps {
+    onUploadComplete: (url: string) => void;
+}
+
+export function CoverImageEditor({ onUploadComplete }: CoverImageEditorProps) {
     const [open, setOpen] = useState(false);
     const [image, setImage] = useState<string | null>(null);
     const [loading, setLoading] = useState(false);
@@ -70,6 +74,7 @@ export function CoverImageEditor() {
                 toast({ title: "Cover Image Updated", description: "The new cover image has been saved." });
                 setOpen(false);
                 setImage(null);
+                onUploadComplete(downloadURL);
             } catch (error) {
                 console.error("Error uploading cover image: ", error);
                 toast({ title: "Error", description: "Failed to upload cover image.", variant: 'destructive' });

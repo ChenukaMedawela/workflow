@@ -1,7 +1,7 @@
 
 "use client";
 
-import React, { createContext, useContext, useState, ReactNode, useEffect } from 'react';
+import React, { createContext, useContext, useState, ReactNode, useEffect, useCallback } from 'react';
 import { User, UserRole } from '@/lib/types';
 import { useRouter } from 'next/navigation';
 import { auth, db } from '@/lib/firebase';
@@ -38,6 +38,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const router = useRouter();
 
   let unsubscribe: () => void;
+
+  const logout = useCallback(async () => {
+    if (user) {
+        await logAudit({ action: 'logout', user });
+    }
+    await signOut(auth);
+    localStorage.removeItem("rememberMe");
+    router.push('/login');
+  }, [user, router]);
 
   useEffect(() => {
     unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
@@ -85,6 +94,40 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  useEffect(() => {
+    if (!user) {
+      return;
+    }
+
+    const INACTIVITY_TIMEOUT = 30 * 60 * 1000; // 30 minutes
+    let inactivityTimer: NodeJS.Timeout;
+
+    const handleInactivity = () => {
+        console.log("User inactive, logging out.");
+        logout(); 
+    };
+
+    const resetInactivityTimer = () => {
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(handleInactivity, INACTIVITY_TIMEOUT);
+    };
+
+    const activityEvents: (keyof WindowEventMap)[] = ['mousemove', 'keydown', 'click', 'scroll'];
+
+    activityEvents.forEach(event => {
+      window.addEventListener(event, resetInactivityTimer);
+    });
+
+    resetInactivityTimer(); // Initialize timer
+
+    return () => {
+      clearTimeout(inactivityTimer);
+      activityEvents.forEach(event => {
+        window.removeEventListener(event, resetInactivityTimer);
+      });
+    };
+  }, [user, logout]);
 
   const login = async (email: string, password: string) => {
     try {
@@ -144,14 +187,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } finally {
         sessionStorage.removeItem('isSigningUp');
     }
-  };
-
-  const logout = async () => {
-    if (user) {
-        await logAudit({ action: 'logout', user });
-    }
-    await signOut(auth);
-    router.push('/login');
   };
   
   const hasRole = (roles: UserRole[]) => {

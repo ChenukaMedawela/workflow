@@ -8,12 +8,9 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Lightbulb } from "lucide-react";
-import { suggestAutomationRules, SuggestAutomationRulesOutput } from '@/ai/flows/workflow-recommendation';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { db } from '@/lib/firebase';
 import { collection, getDocs, doc, setDoc } from 'firebase/firestore';
-import { Lead, Stage, AutomationRule } from '@/lib/types';
+import { Stage, AutomationRule } from '@/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { logAudit } from '@/lib/audit-log';
 import { useAuth } from '@/hooks/use-auth';
@@ -21,9 +18,6 @@ import { useAuth } from '@/hooks/use-auth';
 export default function AdminPipelineAutomationPage() {
     const [rules, setRules] = useState<AutomationRule[]>([]);
     const [stages, setStages] = useState<Stage[]>([]);
-    const [leads, setLeads] = useState<Lead[]>([]);
-    const [recommendations, setRecommendations] = useState<SuggestAutomationRulesOutput | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
     const { toast } = useToast();
     const { user } = useAuth();
 
@@ -44,46 +38,11 @@ export default function AdminPipelineAutomationPage() {
                 return existingRule || { stageId: stage.id, enabled: false, triggerDays: 30, action: 'Move to Next Stage' };
             });
             setRules(allRules);
-
-            const leadsCollection = collection(db, 'leads');
-            const leadsSnapshot = await getDocs(leadsCollection);
-            const leadsList = leadsSnapshot.docs.map(doc => doc.data() as Lead);
-            setLeads(leadsList);
         };
         fetchData();
     }, []);
     
     const activeStages = stages.filter(stage => !stage.isIsolated);
-
-    const handleGetRecommendations = async () => {
-        setIsLoading(true);
-        setRecommendations(null);
-        try {
-            if (leads.length === 0) {
-                toast({ title: "Not enough data", description: "Need at least one lead to generate recommendations."});
-                setIsLoading(false);
-                return;
-            }
-
-            const input = {
-                leadAttributes: leads[0], 
-                historicalData: leads,
-                currentPipelineStages: activeStages.map(s => s.name),
-            };
-            const result = await suggestAutomationRules(input);
-            await logAudit({
-                action: 'generate_ai_recommendations',
-                details: { recommendationCount: result.recommendations.length },
-                user,
-            });
-            setRecommendations(result);
-        } catch (error) {
-            console.error("Error getting AI recommendations:", error);
-            toast({ title: "Error", description: "Failed to get AI recommendations.", variant: "destructive"});
-        } finally {
-            setIsLoading(false);
-        }
-    }
     
     const handleRuleChange = (stageId: string, field: keyof AutomationRule, value: any) => {
         setRules(rules.map(r => r.stageId === stageId ? { ...r, [field]: value } : r));
@@ -127,34 +86,9 @@ export default function AdminPipelineAutomationPage() {
                         <CardTitle>Pipeline Automation</CardTitle>
                         <CardDescription>Create rules to automatically move leads and improve efficiency.</CardDescription>
                     </div>
-                     <Button onClick={handleGetRecommendations} disabled={isLoading}>
-                        {isLoading ? (
-                            <div className="h-5 w-5 animate-spin rounded-full border-2 border-solid border-primary-foreground border-t-transparent mr-2"></div>
-                        ): (
-                            <Lightbulb className="mr-2 h-4 w-4"/>
-                        )}
-                        Get AI Recommendations
-                    </Button>
                 </div>
             </CardHeader>
             <CardContent className="space-y-6">
-                {recommendations && (
-                     <Alert>
-                        <Lightbulb className="h-4 w-4" />
-                        <AlertTitle>AI Recommendations</AlertTitle>
-                        <AlertDescription>
-                            <ul className="space-y-2 mt-2">
-                            {recommendations.recommendations.map((rec, index) => (
-                                <li key={index} className="text-sm">
-                                    - For stage <span className="font-semibold">{rec.stage}</span>, suggest action <span className="font-semibold">{`'${rec.action}'`}</span> after <span className="font-semibold">{rec.triggerDays} days</span>. (Confidence: {Math.round(rec.confidence * 100)}%)
-                                    <p className="text-xs text-muted-foreground pl-4">{rec.rationale}</p>
-                                </li>
-                            ))}
-                            </ul>
-                        </AlertDescription>
-                    </Alert>
-                )}
-
                 <div className="space-y-4">
                 {activeStages.map(stage => {
                     const rule = rules.find(r => r.stageId === stage.id);

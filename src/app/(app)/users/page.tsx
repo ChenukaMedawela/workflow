@@ -235,12 +235,8 @@ export default function UsersPage() {
                 <EditUserDialog
                     user={selectedUserForEdit}
                     entities={entities}
-                    onUserUpdated={() => {
-                        fetchUsers();
-                        setSelectedUserForEdit(null);
-                    }}
-                    open={isEditDialogOpen}
-                    onOpenChange={setIsEditDialogOpen}
+                    isOpen={isEditDialogOpen}
+                    onClose={() => setIsEditDialogOpen(false)}
                 />
             )}
             

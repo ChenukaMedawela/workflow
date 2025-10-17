@@ -68,11 +68,24 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
   });
 
   const watchRole = form.watch("role");
+  const filteredEntities = entities.filter(e => e.name !== 'Default Entity');
+
+  React.useEffect(() => {
+    const isSuperRole = watchRole === 'Super Admin' || watchRole === 'Super User';
+    if (isSuperRole) {
+      form.setValue("entityId", "");
+    } else {
+      if (filteredEntities.length > 0 && !form.getValues("entityId")) {
+        const globalEntity = filteredEntities.find(e => e.name === 'Global');
+        form.setValue("entityId", globalEntity ? globalEntity.id : filteredEntities[0].id);
+      }
+    }
+  }, [watchRole, filteredEntities, form.setValue, form.getValues]);
 
   async function onSubmit(values: z.infer<typeof userSchema>) {
     try {
       const isSuperRole = values.role === 'Super Admin' || values.role === 'Super User';
-      const entityId = isSuperRole ? undefined : (values.entityId === 'global' || !values.entityId ? undefined : values.entityId);
+      const entityId = isSuperRole ? undefined : (values.entityId || undefined);
 
       await createUser({
           name: values.name,
@@ -118,7 +131,6 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
 
   const isEntityHidden = watchRole === 'Super Admin' || watchRole === 'Super User';
   const assignableRoles = getAssignableRoles();
-  const filteredEntities = entities.filter(e => e.name !== 'Default Entity');
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -207,7 +219,7 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
                     <FormLabel>Entity</FormLabel>
                     <Select
                         onValueChange={field.onChange}
-                        defaultValue={field.value}
+                        value={field.value}
                     >
                         <FormControl>
                         <SelectTrigger>
@@ -215,7 +227,6 @@ export function AddUserDialog({ onUserAdded, entities }: AddUserDialogProps) {
                         </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                        <SelectItem value="global">Global</SelectItem>
                         {filteredEntities.map((entity) => (
                             <SelectItem key={entity.id} value={entity.id}>
                             {entity.name}

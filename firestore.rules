@@ -3,13 +3,30 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Allow public read-only access to settings and entities
+    match /settings/theme {
+      allow get: if true;
+    }
+    match /entities/{entityId} {
+      allow get, list: if true;
+    }
+
+    // Allow users to create their own user document upon signup
+    match /users/{userId} {
+      allow create: if request.auth.uid == userId;
+      // Allow authenticated users to read/update/delete their own document
+      allow read, update, delete: if request.auth.uid == userId;
+    }
+
+    // Allow admins to manage all user documents
+    match /users/{userId} {
+        allow write, read: if get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'Admin';
+    }
+
+    // Fallback for any other path - requires authentication
     match /{document=**} {
-      // Allow public reads for the theme document for login page styling, and for the entities collection for the signup page.
-      // All other reads, and all writes, still require authentication.
-      allow read: if (request.path == /databases/$(database)/documents/settings/theme) ||
-                     (request.path.size() >= 5 && request.path[4] == 'entities') ||
-                     request.auth != null;
-      allow write: if request.auth != null;
+      allow read, write: if request.auth != null;
     }
   }
 }

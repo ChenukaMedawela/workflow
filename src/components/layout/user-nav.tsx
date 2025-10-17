@@ -13,8 +13,9 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/hooks/use-auth";
-import { CreditCard, LogOut, Settings, User } from "lucide-react";
+import { CreditCard, LogOut, Settings, User, HelpCircle } from "lucide-react";
 import { ThemeToggle } from "../theme-toggle";
+import Link from 'next/link';
 
 export function UserNav() {
   const { user, logout } = useAuth();
@@ -63,6 +64,12 @@ export function UserNav() {
           <DropdownMenuItem>
             <CreditCard className="mr-2 h-4 w-4" />
             <span>Billing</span>
+          </DropdownMenuItem>
+          <DropdownMenuItem>
+            <Link href="/help" className="flex items-center w-full">
+              <HelpCircle className="mr-2 h-4 w-4" />
+              <span>Help Portal</span>
+            </Link>
           </DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />

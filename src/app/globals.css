@@ -44,7 +44,7 @@
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
     --sidebar-primary-border: hsl(var(--primary));
     --sidebar-accent: hsl(var(--primary) / 0.2);
-    --sidebar-accent-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent-foreground: hsl(var(--accent-foreground));
     --sidebar-border: 217 11% 45%;
     --sidebar-ring: hsl(var(--ring));
   }
@@ -87,7 +87,7 @@
     --sidebar-primary-foreground: hsl(var(--primary-foreground));
     --sidebar-primary-border: hsl(var(--primary));
     --sidebar-accent: hsl(var(--primary) / 0.2);
-    --sidebar-accent-foreground: hsl(var(--primary-foreground));
+    --sidebar-accent-foreground: 0 0% 100%;
     --sidebar-border: 217 11% 45%;
     --sidebar-ring: hsl(var(--ring));
   }

@@ -30,6 +30,7 @@ import { db } from "@/lib/firebase";
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
   password: z.string().min(1, "Password is required"),
+  rememberMe: z.boolean().optional(),
 });
 
 export default function LoginPage() {
@@ -49,6 +50,15 @@ export default function LoginPage() {
         }
     };
     fetchLogo();
+
+    const rememberMeData = localStorage.getItem("rememberMe");
+    if (rememberMeData) {
+      const { email, password } = JSON.parse(rememberMeData);
+      form.setValue("email", email);
+      form.setValue("password", password);
+      form.setValue("rememberMe", true);
+    }
+
   }, []);
 
 
@@ -57,12 +67,18 @@ export default function LoginPage() {
     defaultValues: {
       email: "",
       password: "",
+      rememberMe: false,
     },
   });
 
   const handleLogin = async (values: z.infer<typeof loginSchema>) => {
     setIsLoading(true);
     try {
+      if (values.rememberMe) {
+        localStorage.setItem("rememberMe", JSON.stringify({ email: values.email, password: values.password }));
+      } else {
+        localStorage.removeItem("rememberMe");
+      }
       await login(values.email, values.password);
       toast({
         title: "Login Successful",
@@ -142,18 +158,29 @@ export default function LoginPage() {
               )}
             />
             <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <Checkbox id="remember-me" disabled={isLoading}/>
-                    <label
-                        htmlFor="remember-me"
-                        className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-                    >
+              <FormField
+                control={form.control}
+                name="rememberMe"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                    <FormControl>
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={isLoading}
+                      />
+                    </FormControl>
+                    <div className="space-y-1 leading-none">
+                      <FormLabel>
                         Remember me
-                    </label>
-                </div>
-                <Link href="#" className="text-sm text-primary hover:underline">
-                    Forgot password?
-                </Link>
+                      </FormLabel>
+                    </div>
+                  </FormItem>
+                )}
+              />
+              <Link href="#" className="text-sm text-primary hover:underline">
+                Forgot password?
+              </Link>
             </div>
           </CardContent>
           <CardFooter className="flex flex-col gap-4 mt-auto">
