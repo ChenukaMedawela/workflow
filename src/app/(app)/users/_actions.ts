@@ -2,10 +2,11 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
-import { db, auth } from '@/lib/firebase-admin';
+import { getFirebaseAdmin } from '@/lib/firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 export async function approveUser(userId: string) {
+  const { db, auth } = getFirebaseAdmin();
   const userRef = db.collection('users').doc(userId);
   
   const entitiesSnapshot = await db.collection('entities').limit(1).get();
@@ -26,6 +27,7 @@ export async function approveUser(userId: string) {
 }
 
 export async function rejectUser(userId: string) {
+  const { db, auth } = getFirebaseAdmin();
   const userRef = db.collection('users').doc(userId);
   await userRef.delete();
   
@@ -40,6 +42,7 @@ export async function rejectUser(userId: string) {
 }
 
 export async function updateUser(userId: string, data: { name: string; email: string; role?: string; entity?: string }) {
+  const { db, auth } = getFirebaseAdmin();
   const userRef = db.collection('users').doc(userId);
 
   const updateData: { [key: string]: any } = {

@@ -2,8 +2,6 @@
 'use server';
 
 import { getFirebaseAdmin } from '@/lib/firebase-admin';
-import { db } from '@/lib/firebase';
-import { doc, setDoc, deleteDoc } from 'firebase/firestore';
 import { User, UserRole } from '@/lib/types';
 import { logAudit } from '@/lib/audit-log';
 
@@ -18,7 +16,7 @@ interface CreateUserArgs {
 
 export async function createUser({ email, password, name, entityId, role, actor }: CreateUserArgs): Promise<User> {
   try {
-    const { auth: adminAuth } = getFirebaseAdmin();
+    const { auth: adminAuth, db: adminDb } = getFirebaseAdmin();
     const userRecord = await adminAuth.createUser({
       email,
       password,
@@ -34,7 +32,7 @@ export async function createUser({ email, password, name, entityId, role, actor 
       ...(entityId && entityId !== 'global' && { entityId }),
     };
 
-    await setDoc(doc(db, 'users', userRecord.uid), newUser);
+    await adminDb.collection('users').doc(userRecord.uid).set(newUser);
 
     await logAudit({
       action: 'create_user',
@@ -64,9 +62,9 @@ interface DeleteUserArgs {
 
 export async function deleteUser({ userToDelete, actor }: DeleteUserArgs): Promise<void> {
     try {
-        const { auth: adminAuth } = getFirebaseAdmin();
+        const { auth: adminAuth, db: adminDb } = getFirebaseAdmin();
         await adminAuth.deleteUser(userToDelete.id);
-        await deleteDoc(doc(db, "users", userToDelete.id));
+        await adminDb.collection('users').doc(userToDelete.id).delete();
         
         await logAudit({
             action: 'delete_user',
