@@ -4,7 +4,6 @@
 import { AppSidebar } from '@/components/layout/app-sidebar';
 import { MobileHeader } from '@/components/layout/mobile-header';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { useAuth } from '@/hooks/use-auth';
 import React from 'react';
 import { AuthGuard } from '@/components/guards/auth-guard';
 
@@ -13,15 +12,6 @@ export default function AppLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
-
-  if (loading || !user) {
-    return (
-      <div className="flex h-screen w-full items-center justify-center">
-        <div className="h-16 w-16 animate-spin rounded-full border-4 border-solid border-primary border-t-transparent"></div>
-      </div>
-    );
-  }
 
   return (
     <AuthGuard>
